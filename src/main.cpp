@@ -67,7 +67,7 @@
 #include <U8g2_for_Adafruit_GFX.h>
 #include <ArduinoJson.h>
 #include <WiFiClientSecure.h>
-
+#include "WiFi.h"
 #if defined (ESP8266)
 // select one and adapt to your mapping, can use full buffer size (full HEIGHT)
 //GxEPD2_BW<GxEPD2_154, GxEPD2_154::HEIGHT> display(GxEPD2_154(/*CS=D8*/ SS, /*DC=D3*/ 0, /*RST=D4*/ 2, /*BUSY=D2*/ 4)); // GDEP015OC1 no longer available
@@ -324,15 +324,31 @@ void helloWorld()
  */
 void SetupWiFi()
 {
-  WiFi.begin(ssid,password);
+  //Init WiFi as Station, start SmartConfig
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.beginSmartConfig();
 
-  while (WiFi.status() != WL_CONNECTED) {
+  //Wait for SmartConfig packet from mobile
+  Serial.println("Waiting for SmartConfig.");
+  while (!WiFi.smartConfigDone()) {
+    delay(500);
     Serial.print(".");
-    delay(1000);
   }
 
-  Serial.print("Connected to ");
-  Serial.println(ssid);  
+  Serial.println("");
+  Serial.println("SmartConfig received.");
+
+  //Wait for WiFi to connect to AP
+  Serial.println("Waiting for WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("WiFi Connected.");
+
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP()); 
 }
 
 void setup()

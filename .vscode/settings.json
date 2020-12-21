@@ -1,6 +1,10 @@
 {
     "cSpell.ignoreWords": [
-        "qimen"
+        "event",
+        "group",
+        "qimen",
+        "s",
+        "wifi"
     ],
     "cmake.configureOnOpen": false
 }
