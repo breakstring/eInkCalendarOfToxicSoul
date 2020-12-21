@@ -64,8 +64,9 @@
 #include <GxEPD2_BW.h>
 #include <GxEPD2_3C.h>
 #include <GxEPD2_7C.h>
-#include <Fonts/FreeMonoBold9pt7b.h>
 #include <U8g2_for_Adafruit_GFX.h>
+#include <ArduinoJson.h>
+#include <WiFiClientSecure.h>
 
 #if defined (ESP8266)
 // select one and adapt to your mapping, can use full buffer size (full HEIGHT)
@@ -284,7 +285,8 @@ GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=5*/ 15, /*DC=*
 //GxEPD2_7C<GxEPD2_565c, MAX_HEIGHT_7C(GxEPD2_565c)> display(GxEPD2_565c(/*CS=10*/ SS, /*DC=*/ 8, /*RST=*/ 9, /*BUSY=*/ 7)); // Waveshare 5.65" 7-color
 #endif
 
-//#include "GxEPD2_boards_added.h"
+#include "config.h"
+
 
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
 
@@ -316,6 +318,23 @@ void helloWorld()
 }
 
 
+/**
+ * @brief Setup WiFi connection.
+ * 
+ */
+void SetupWiFi()
+{
+  WiFi.begin(ssid,password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(1000);
+  }
+
+  Serial.print("Connected to ");
+  Serial.println(ssid);  
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -327,7 +346,11 @@ void setup()
   SPI.begin(13,12,14,15);
   u8g2Fonts.begin(display); // connect u8g2 procedures to Adafruit GFX
   
-  helloWorld();
+  SetupWiFi();
+
+  
+
+  // helloWorld();
 
   Serial.println("setup done");
 }
