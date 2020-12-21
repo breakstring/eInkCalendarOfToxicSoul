@@ -66,8 +66,14 @@
 #include <GxEPD2_7C.h>
 #include <U8g2_for_Adafruit_GFX.h>
 #include <ArduinoJson.h>
-#include <WiFiClientSecure.h>
+#include "esp_system.h"
+#include <esp_wifi.h>
+#include <string.h>
 #include "WiFi.h"
+#include "Preferences.h"
+
+#include "config.h"
+
 #if defined (ESP8266)
 // select one and adapt to your mapping, can use full buffer size (full HEIGHT)
 //GxEPD2_BW<GxEPD2_154, GxEPD2_154::HEIGHT> display(GxEPD2_154(/*CS=D8*/ SS, /*DC=D3*/ 0, /*RST=D4*/ 2, /*BUSY=D2*/ 4)); // GDEP015OC1 no longer available
@@ -285,11 +291,17 @@ GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=5*/ 15, /*DC=*
 //GxEPD2_7C<GxEPD2_565c, MAX_HEIGHT_7C(GxEPD2_565c)> display(GxEPD2_565c(/*CS=10*/ SS, /*DC=*/ 8, /*RST=*/ 9, /*BUSY=*/ 7)); // Waveshare 5.65" 7-color
 #endif
 
-#include "config.h"
+
+
 
 
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
+Preferences preferences;
 
+String WiFi_SSID;
+String WiFi_Password;
+const  char* scSSID;       
+const  char* scPassword;
 
 void helloWorld()
 {
@@ -324,8 +336,33 @@ void helloWorld()
  */
 void SetupWiFi()
 {
-  //Init WiFi as Station, start SmartConfig
+
   WiFi.mode(WIFI_AP_STA);
+
+  wifi_config_t conf;
+  esp_wifi_get_config(WIFI_IF_STA, &conf);  // load wifi settings to struct conf
+  scSSID = reinterpret_cast<const char*>(conf.sta.ssid);
+  scPassword = reinterpret_cast<const char*>(conf.sta.password);
+  Serial.printf("Saved WiFi SSID: %s\n",scSSID);
+  Serial.printf("Saved WiFi Password: %s\n",scPassword);
+
+  //TODO: reconnect WiFi with saved config, retry 30 times.
+
+
+  preferences.begin("toxicsoul",false);
+  WiFi_SSID = preferences.getString("wifi_ssid","");
+  Serial.print("WiFi SSID in storage:");
+  Serial.println(WiFi_SSID);
+  WiFi_Password = preferences.getString("wifi_password","");
+  Serial.print("WiFi password in storage:");
+  Serial.println(WiFi_Password);
+  preferences.end();
+  if(WiFi_SSID != "" && WiFi_Password != "") {
+    Serial.println("Try to connect to wireless ......");
+
+  }
+
+
   WiFi.beginSmartConfig();
 
   //Wait for SmartConfig packet from mobile
@@ -339,6 +376,7 @@ void SetupWiFi()
   Serial.println("SmartConfig received.");
 
   //Wait for WiFi to connect to AP
+  // TODO: should retry SmartConfig after 30 times
   Serial.println("Waiting for WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -346,16 +384,23 @@ void SetupWiFi()
   }
 
   Serial.println("WiFi Connected.");
-
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP()); 
+  Serial.printf("WiFi SSID:%s\n", WiFi.SSID());
+  Serial.printf("WiFi Password:%s\n", WiFi.psk());
 }
 
 void setup()
 {
+
+
   Serial.begin(115200);
   Serial.println();
   Serial.println("setup");
+
+
+
+
   display.init();
   display.setRotation(1);
   SPI.end();
