@@ -66,13 +66,15 @@
 #include <GxEPD2_7C.h>
 #include <U8g2_for_Adafruit_GFX.h>
 #include <ArduinoJson.h>
-
-//#include <string.h>
-
 #include "Preferences.h"
 
 #include "config.h"
 #include "SmartConfigManager.h"
+#include "MyIP.h"
+
+
+
+
 
 #if defined(ESP8266)
 // select one and adapt to your mapping, can use full buffer size (full HEIGHT)
@@ -337,11 +339,13 @@ void setup()
   SPI.end();
   SPI.begin(13, 12, 14, 15);
   u8g2Fonts.begin(display); // connect u8g2 procedures to Adafruit GFX
+
   SmartConfigManager scm;
   scm.initWiFi(ShowWiFiSmartConfig);
 
-  // helloWorld();
-
+  MyIP myIP(Language::CHINESE);
+  Serial.printf("IP: %s\n",myIP.IP.c_str());  
+  Serial.printf("City: %s\n",myIP.City.c_str());  
   Serial.println("setup done");
 }
 
