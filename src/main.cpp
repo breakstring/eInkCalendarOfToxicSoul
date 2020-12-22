@@ -74,7 +74,7 @@
 
 #include "config.h"
 
-#if defined (ESP8266)
+#if defined(ESP8266)
 // select one and adapt to your mapping, can use full buffer size (full HEIGHT)
 //GxEPD2_BW<GxEPD2_154, GxEPD2_154::HEIGHT> display(GxEPD2_154(/*CS=D8*/ SS, /*DC=D3*/ 0, /*RST=D4*/ 2, /*BUSY=D2*/ 4)); // GDEP015OC1 no longer available
 //GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT> display(GxEPD2_154_D67(/*CS=D8*/ SS, /*DC=D3*/ 0, /*RST=D4*/ 2, /*BUSY=D2*/ 4)); // GDEH0154D67
@@ -168,7 +168,7 @@
 //GxEPD2_BW<GxEPD2_213_B72, GxEPD2_213_B72::HEIGHT> display(GxEPD2_213_B72(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4)); // GDEH0213B72
 //GxEPD2_BW<GxEPD2_213_B73, GxEPD2_213_B73::HEIGHT> display(GxEPD2_213_B73(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4)); // GDEH0213B73
 //GxEPD2_BW<GxEPD2_213_flex, GxEPD2_213_flex::HEIGHT> display(GxEPD2_213_flex(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4)); // GDEW0213I5F
-GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=5*/ 15, /*DC=*/ 27, /*RST=*/ 26, /*BUSY=*/ 25));
+GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=5*/ 15, /*DC=*/27, /*RST=*/26, /*BUSY=*/25));
 //GxEPD2_BW<GxEPD2_290_T5, GxEPD2_290_T5::HEIGHT> display(GxEPD2_290_T5(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4)); // GDEW029T5
 //GxEPD2_BW<GxEPD2_260, GxEPD2_260::HEIGHT> display(GxEPD2_260(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
 //GxEPD2_BW<GxEPD2_270, GxEPD2_270::HEIGHT> display(GxEPD2_270(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
@@ -248,10 +248,10 @@ GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=5*/ 15, /*DC=*
 #endif
 
 #if defined(__AVR)
-#if defined (ARDUINO_AVR_MEGA2560)
+#if defined(ARDUINO_AVR_MEGA2560)
 #define MAX_DISPLAY_BUFFER_SIZE 5000 // e.g. full height for 200x200
 #else
-#define MAX_DISPLAY_BUFFER_SIZE 800 // 
+#define MAX_DISPLAY_BUFFER_SIZE 800 //
 #endif
 #define MAX_HEIGHT(EPD) (EPD::HEIGHT <= MAX_DISPLAY_BUFFER_SIZE / (EPD::WIDTH / 8) ? EPD::HEIGHT : MAX_DISPLAY_BUFFER_SIZE / (EPD::WIDTH / 8))
 // select one and adapt to your mapping
@@ -291,44 +291,83 @@ GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=5*/ 15, /*DC=*
 //GxEPD2_7C<GxEPD2_565c, MAX_HEIGHT_7C(GxEPD2_565c)> display(GxEPD2_565c(/*CS=10*/ SS, /*DC=*/ 8, /*RST=*/ 9, /*BUSY=*/ 7)); // Waveshare 5.65" 7-color
 #endif
 
-
-
-
-
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
 Preferences preferences;
 
 String WiFi_SSID;
 String WiFi_Password;
-const  char* scSSID;       
-const  char* scPassword;
-
+const char *scSSID;
+const char *scPassword;
+const u8_t WIFI_RECONNECT_LIMITATION = 30;
 void helloWorld()
 {
   //Serial.println("helloWorld");
   uint16_t bg = GxEPD_WHITE;
   uint16_t fg = GxEPD_BLACK;
-  u8g2Fonts.setFontMode(1);                 // use u8g2 transparent mode (this is default)
-  u8g2Fonts.setFontDirection(0);            // left to right (this is default)
-  u8g2Fonts.setForegroundColor(fg);         // apply Adafruit GFX color
-  u8g2Fonts.setBackgroundColor(bg);         // apply Adafruit GFX color
-  u8g2Fonts.setFont(u8g2_font_wqy16_t_gb2312b);  // select u8g2 font from here: https://github.com/olikraus/u8g2/wiki/fntlistall
-  uint16_t x =  (display.width() - 160) / 2;
-  uint16_t y =  display.height() / 2;
+  u8g2Fonts.setFontMode(1);                     // use u8g2 transparent mode (this is default)
+  u8g2Fonts.setFontDirection(0);                // left to right (this is default)
+  u8g2Fonts.setForegroundColor(fg);             // apply Adafruit GFX color
+  u8g2Fonts.setBackgroundColor(bg);             // apply Adafruit GFX color
+  u8g2Fonts.setFont(u8g2_font_wqy16_t_gb2312b); // select u8g2 font from here: https://github.com/olikraus/u8g2/wiki/fntlistall
+  uint16_t x = (display.width() - 160) / 2;
+  uint16_t y = display.height() / 2;
   display.firstPage();
   do
   {
     display.fillScreen(bg);
-    u8g2Fonts.setFontMode(1);                 // use u8g2 transparent mode (this is default)
-    u8g2Fonts.setFontDirection(0);            // left to right (this is default)
+    u8g2Fonts.setFontMode(1);      // use u8g2 transparent mode (this is default)
+    u8g2Fonts.setFontDirection(0); // left to right (this is default)
 
     u8g2Fonts.setCursor(x, y); // start writing at this position
-    u8g2Fonts.drawUTF8(0,100,"世界你好，世界!hah哼哼哈嘿abc的我们一起来吧跳舞啊~");
-  }
-  while (display.nextPage());
+    u8g2Fonts.drawUTF8(0, 100, "世界你好，世界!hah哼哼哈嘿abc的我们一起来吧跳舞啊~");
+  } while (display.nextPage());
   //Serial.println("helloWorld done");
 }
 
+/**
+ * @brief 尝试重连无线网络
+ * 
+ * @return true 成功
+ * @return false 失败
+ */
+bool WaitingForConnectWiFiWithTimeout()
+{
+  u8_t reconnectCount = 0;
+  while (WiFi.status() != WL_CONNECTED && reconnectCount < WIFI_RECONNECT_LIMITATION)
+  {
+    delay(500);
+    Serial.print(".");
+    reconnectCount++;
+  }
+  
+  return (WiFi.status() == WL_CONNECTED);
+}
+
+/**
+ * @brief 尝试通过SmartConfig配置无线网络
+ * 
+ * @return true 连接成功
+ * @return false 连接失败
+ */
+bool TryConnectWiFiWithSmartConfig()
+{
+
+  WiFi.beginSmartConfig();
+  //Wait for SmartConfig packet from mobile
+  Serial.println("Waiting for SmartConfig.");
+  //TODO: Show SmartConfig QR Code and information
+  while (!WiFi.smartConfigDone())
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("SmartConfig received.");
+
+  return WaitingForConnectWiFiWithTimeout();
+
+}
 
 /**
  * @brief Setup WiFi connection.
@@ -343,96 +382,63 @@ void SetupWiFi()
   {
     /* code */
     wifi_config_t conf;
-    esp_err_t espWiFiGetConfigResult = esp_wifi_get_config(WIFI_IF_STA, &conf);  // load wifi settings to struct conf
-    if(espWiFiGetConfigResult == ESP_OK){
-      scSSID = reinterpret_cast<const char*>(conf.sta.ssid);
-      scPassword = reinterpret_cast<const char*>(conf.sta.password);
+    esp_err_t espWiFiGetConfigResult = esp_wifi_get_config(WIFI_IF_STA, &conf); // load wifi settings to struct conf
+    if (espWiFiGetConfigResult == ESP_OK)
+    {
+      scSSID = reinterpret_cast<const char *>(conf.sta.ssid);
+      scPassword = reinterpret_cast<const char *>(conf.sta.password);
       WiFi_SSID = String(scSSID);
       WiFi_Password = String(scPassword);
-      if(WiFi_SSID != "" && WiFi_Password != ""){
-        Serial.printf("Saved WiFi SSID: '%s'\n",WiFi_SSID);
-        Serial.printf("Saved WiFi Password: '%s'\n",WiFi_Password);
-      } else {
+      if (WiFi_SSID != "" && WiFi_Password != "")
+      {
+        Serial.printf("Saved WiFi SSID: '%s'\n", scSSID);
+        Serial.printf("Saved WiFi Password: '%s'\n", scPassword);
+        WiFi.reconnect();
+        if(WaitingForConnectWiFiWithTimeout())
+        {
+          Serial.printf("Connect WiFi successfully with IP: '%s'\n", WiFi.localIP().toString().c_str());
+          return;
+        } 
+      }
+      else
+      {
         Serial.println("Saved SSID or Password invalid.");
       }
-
-      
-    } else {
+    }
+    else
+    {
       Serial.println("Get saved config failed.");
     }
-
   }
-  catch(const std::exception& e)
+  catch (const std::exception &e)
   {
     Serial.printf("Error: %s\n", e.what());
   }
 
-
-
-  //TODO: reconnect WiFi with saved config, retry 30 times.
-
-
-  preferences.begin("toxicsoul",false);
-  WiFi_SSID = preferences.getString("wifi_ssid","");
-  Serial.print("WiFi SSID in storage:");
-  Serial.println(WiFi_SSID);
-  WiFi_Password = preferences.getString("wifi_password","");
-  Serial.print("WiFi password in storage:");
-  Serial.println(WiFi_Password);
-  preferences.end();
-  if(WiFi_SSID != "" && WiFi_Password != "") {
-    Serial.println("Try to connect to wireless ......");
-
+  while(!TryConnectWiFiWithSmartConfig())
+  {
+    //TODO: add some counter to finished the loop.
+    Serial.println("Retry SmartConfig.");
+    WiFi.stopSmartConfig();
   }
+  Serial.printf("Connect WiFi successfully with IP: '%s'\n", WiFi.localIP().toString().c_str());
 
-
-  WiFi.beginSmartConfig();
-
-  //Wait for SmartConfig packet from mobile
-  Serial.println("Waiting for SmartConfig.");
-  while (!WiFi.smartConfigDone()) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("SmartConfig received.");
-
-  //Wait for WiFi to connect to AP
-  // TODO: should retry SmartConfig after 30 times
-  Serial.println("Waiting for WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("WiFi Connected.");
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP()); 
-  Serial.printf("WiFi SSID:%s\n", WiFi.SSID());
-  Serial.printf("WiFi Password:%s\n", WiFi.psk());
 }
 
 void setup()
 {
 
-
   Serial.begin(115200);
   Serial.println();
   Serial.println("setup");
 
-
-
-
   display.init();
   display.setRotation(1);
   SPI.end();
-  SPI.begin(13,12,14,15);
+  SPI.begin(13, 12, 14, 15);
   u8g2Fonts.begin(display); // connect u8g2 procedures to Adafruit GFX
-  
-  SetupWiFi();
 
-  
+  SetupWiFi();
 
   // helloWorld();
 
@@ -442,4 +448,3 @@ void setup()
 void loop()
 {
 }
-
