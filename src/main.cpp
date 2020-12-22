@@ -325,7 +325,7 @@ void helloWorld()
 }
 
 /**
- * @brief 尝试重连无线网络
+ * @brief 等待重连无线网络
  * 
  * @return true 成功
  * @return false 失败
@@ -344,6 +344,18 @@ bool WaitingForConnectWiFiWithTimeout()
 }
 
 /**
+ * @brief 显示 WiFi SmartConfig 信息
+ * 
+ */
+void ShowWiFiSmartConfig()
+{
+  //TODO: Show SmartConfig QR Code and information
+  Serial.println("Waiting for SmartConfig.");
+  return ;
+}
+
+
+/**
  * @brief 尝试通过SmartConfig配置无线网络
  * 
  * @return true 连接成功
@@ -354,8 +366,7 @@ bool TryConnectWiFiWithSmartConfig()
 
   WiFi.beginSmartConfig();
   //Wait for SmartConfig packet from mobile
-  Serial.println("Waiting for SmartConfig.");
-  //TODO: Show SmartConfig QR Code and information
+  ShowWiFiSmartConfig();
   while (!WiFi.smartConfigDone())
   {
     delay(500);
@@ -380,7 +391,6 @@ void SetupWiFi()
 
   try
   {
-    /* code */
     wifi_config_t conf;
     esp_err_t espWiFiGetConfigResult = esp_wifi_get_config(WIFI_IF_STA, &conf); // load wifi settings to struct conf
     if (espWiFiGetConfigResult == ESP_OK)
@@ -391,8 +401,7 @@ void SetupWiFi()
       WiFi_Password = String(scPassword);
       if (WiFi_SSID != "" && WiFi_Password != "")
       {
-        Serial.printf("Saved WiFi SSID: '%s'\n", scSSID);
-        Serial.printf("Saved WiFi Password: '%s'\n", scPassword);
+        Serial.println("Try connect WiFi with saved credentials.");
         WiFi.reconnect();
         if(WaitingForConnectWiFiWithTimeout())
         {
@@ -400,14 +409,6 @@ void SetupWiFi()
           return;
         } 
       }
-      else
-      {
-        Serial.println("Saved SSID or Password invalid.");
-      }
-    }
-    else
-    {
-      Serial.println("Get saved config failed.");
     }
   }
   catch (const std::exception &e)
@@ -417,7 +418,6 @@ void SetupWiFi()
 
   while(!TryConnectWiFiWithSmartConfig())
   {
-    //TODO: add some counter to finished the loop.
     Serial.println("Retry SmartConfig.");
     WiFi.stopSmartConfig();
   }
