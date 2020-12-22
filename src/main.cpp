@@ -339,12 +339,35 @@ void SetupWiFi()
 
   WiFi.mode(WIFI_AP_STA);
 
-  wifi_config_t conf;
-  esp_wifi_get_config(WIFI_IF_STA, &conf);  // load wifi settings to struct conf
-  scSSID = reinterpret_cast<const char*>(conf.sta.ssid);
-  scPassword = reinterpret_cast<const char*>(conf.sta.password);
-  Serial.printf("Saved WiFi SSID: %s\n",scSSID);
-  Serial.printf("Saved WiFi Password: %s\n",scPassword);
+  try
+  {
+    /* code */
+    wifi_config_t conf;
+    esp_err_t espWiFiGetConfigResult = esp_wifi_get_config(WIFI_IF_STA, &conf);  // load wifi settings to struct conf
+    if(espWiFiGetConfigResult == ESP_OK){
+      scSSID = reinterpret_cast<const char*>(conf.sta.ssid);
+      scPassword = reinterpret_cast<const char*>(conf.sta.password);
+      WiFi_SSID = String(scSSID);
+      WiFi_Password = String(scPassword);
+      if(WiFi_SSID != "" && WiFi_Password != ""){
+        Serial.printf("Saved WiFi SSID: '%s'\n",WiFi_SSID);
+        Serial.printf("Saved WiFi Password: '%s'\n",WiFi_Password);
+      } else {
+        Serial.println("Saved SSID or Password invalid.");
+      }
+
+      
+    } else {
+      Serial.println("Get saved config failed.");
+    }
+
+  }
+  catch(const std::exception& e)
+  {
+    Serial.printf("Error: %s\n", e.what());
+  }
+
+
 
   //TODO: reconnect WiFi with saved config, retry 30 times.
 
