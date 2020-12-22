@@ -66,13 +66,13 @@
 #include <GxEPD2_7C.h>
 #include <U8g2_for_Adafruit_GFX.h>
 #include <ArduinoJson.h>
-#include "esp_system.h"
-#include <esp_wifi.h>
-#include <string.h>
-#include "WiFi.h"
+
+//#include <string.h>
+
 #include "Preferences.h"
 
 #include "config.h"
+#include "SmartConfigManager.h"
 
 #if defined(ESP8266)
 // select one and adapt to your mapping, can use full buffer size (full HEIGHT)
@@ -294,11 +294,6 @@ GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=5*/ 15, /*DC=*
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
 Preferences preferences;
 
-String WiFi_SSID;
-String WiFi_Password;
-const char *scSSID;
-const char *scPassword;
-const u8_t WIFI_RECONNECT_LIMITATION = 30;
 void helloWorld()
 {
   //Serial.println("helloWorld");
@@ -324,105 +319,10 @@ void helloWorld()
   //Serial.println("helloWorld done");
 }
 
-/**
- * @brief 等待重连无线网络
- * 
- * @return true 成功
- * @return false 失败
- */
-bool WaitingForConnectWiFiWithTimeout()
-{
-  u8_t reconnectCount = 0;
-  while (WiFi.status() != WL_CONNECTED && reconnectCount < WIFI_RECONNECT_LIMITATION)
-  {
-    delay(500);
-    Serial.print(".");
-    reconnectCount++;
-  }
-  
-  return (WiFi.status() == WL_CONNECTED);
-}
-
-/**
- * @brief 显示 WiFi SmartConfig 信息
- * 
- */
 void ShowWiFiSmartConfig()
 {
-  //TODO: Show SmartConfig QR Code and information
-  Serial.println("Waiting for SmartConfig.");
-  return ;
-}
-
-
-/**
- * @brief 尝试通过SmartConfig配置无线网络
- * 
- * @return true 连接成功
- * @return false 连接失败
- */
-bool TryConnectWiFiWithSmartConfig()
-{
-
-  WiFi.beginSmartConfig();
-  //Wait for SmartConfig packet from mobile
-  ShowWiFiSmartConfig();
-  while (!WiFi.smartConfigDone())
-  {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("SmartConfig received.");
-
-  return WaitingForConnectWiFiWithTimeout();
-
-}
-
-/**
- * @brief Setup WiFi connection.
- * 
- */
-void SetupWiFi()
-{
-
-  WiFi.mode(WIFI_AP_STA);
-
-  try
-  {
-    wifi_config_t conf;
-    esp_err_t espWiFiGetConfigResult = esp_wifi_get_config(WIFI_IF_STA, &conf); // load wifi settings to struct conf
-    if (espWiFiGetConfigResult == ESP_OK)
-    {
-      scSSID = reinterpret_cast<const char *>(conf.sta.ssid);
-      scPassword = reinterpret_cast<const char *>(conf.sta.password);
-      WiFi_SSID = String(scSSID);
-      WiFi_Password = String(scPassword);
-      if (WiFi_SSID != "" && WiFi_Password != "")
-      {
-        Serial.println("Try connect WiFi with saved credentials.");
-        WiFi.reconnect();
-        if(WaitingForConnectWiFiWithTimeout())
-        {
-          Serial.printf("Connect WiFi successfully with IP: '%s'\n", WiFi.localIP().toString().c_str());
-          return;
-        } 
-      }
-    }
-  }
-  catch (const std::exception &e)
-  {
-    Serial.printf("Error: %s\n", e.what());
-  }
-
-  while(!TryConnectWiFiWithSmartConfig())
-  {
-    Serial.println("Retry SmartConfig.");
-    WiFi.stopSmartConfig();
-  }
-  Serial.printf("Connect WiFi successfully with IP: '%s'\n", WiFi.localIP().toString().c_str());
-
+  //TODO: show smart_config
+  Serial.println("Should show smartconfig information");
 }
 
 void setup()
@@ -437,8 +337,8 @@ void setup()
   SPI.end();
   SPI.begin(13, 12, 14, 15);
   u8g2Fonts.begin(display); // connect u8g2 procedures to Adafruit GFX
-
-  SetupWiFi();
+  SmartConfigManager scm;
+  scm.initWiFi(ShowWiFiSmartConfig);
 
   // helloWorld();
 
