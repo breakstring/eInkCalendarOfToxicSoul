@@ -16,7 +16,6 @@ MyIP::MyIP(Language language = Language::CHINESE)
         if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
         {
             String payload = httpClient.getString();
-            Serial.println(payload);
 
             DynamicJsonDocument doc(384);
             deserializeJson(doc, payload);

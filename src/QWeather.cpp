@@ -1,58 +1,45 @@
 #include "QWeather.h"
-#define enum_to_string(x) #x
+#include "urlencode.h"
 
 const String QWEATHER_BASE_URL = "https://geoapi.qweather.com";
 
 
-QWeather::QWeather(String key, lang l)
+
+
+
+QWeather::QWeather(String key, String l)
 {
     _key = key;
     _lang = l;
 }
 
-String QWeather::GetLanguage(lang l)
-{
-    String result = "";
-    switch(l)
-    {
-        case lang::zh_hans:
-            result = "zh-hans";
-            break;
-        case lang::zh_hant:
-            result = "zh-hant";
-            break;
-        default:
-            result = enum_to_string(l);
-            break;
-    }
-    return result;
-}
+
 
 void QWeather::SetUserKey(String key)
 {
     _key = key;
 }
 
-void QWeather::SetLanguage(lang l)
+void QWeather::SetLanguage(String l)
 {
     _lang = l;
 }
 
-vector<GeoInfo> QWeather::GetGeoInfoList(String location, String adm = "", String range = "cn",uint8_t maxNumber = 10)
+vector<GeoInfo> QWeather::GetGeoInfoList(String location, String adm, String range,uint8_t maxNumber)
 {
     vector<GeoInfo> result;
     WiFiClientSecure client;
     client.setInsecure();
     HTTPClient httpClient;
 
-    String requestURL = QWEATHER_BASE_URL + "/v2/city/lookup?key=" + _key + "&location=" + location + "&adm="+ adm +"&range=" + range + "&number=" + String(maxNumber) + "&lang=" + GetLanguage(_lang);
-    if(httpClient.begin(requestURL))
+    String encodedURL = QWEATHER_BASE_URL + "/v2/city/lookup?key=" + _key + "&gzip=n&location=" + urlencode(location) + "&adm="+ urlencode(adm) +"&range=" + range + "&number=" + String(maxNumber) + "&lang=" + _lang;
+
+    if(httpClient.begin(encodedURL))
     {
         u8_t httpCode = httpClient.GET();
         if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
         {
             String payload = httpClient.getString();
-            Serial.println(payload);
 
             DynamicJsonDocument doc(8192);
             deserializeJson(doc, payload);
@@ -60,7 +47,6 @@ vector<GeoInfo> QWeather::GetGeoInfoList(String location, String adm = "", Strin
             JsonArray locationArray = doc["location"];
             for(JsonVariant v : locationArray) {
                 JsonObject loc =  v.as<JsonObject>();
-                Serial.println(v.as<int>());
                 GeoInfo gi;
                 gi.name = loc["name"].as<String>(); 
                 gi.id = loc["id"].as<String>();
@@ -79,14 +65,25 @@ vector<GeoInfo> QWeather::GetGeoInfoList(String location, String adm = "", Strin
             }
 
         }
-
+        else
+        {
+            Serial.printf("Connect to weather api server failed, the http status code is:%u\n",httpCode);
+            String payload = httpClient.getString();
+            Serial.println(payload);
+        }
+        
         httpClient.end();
         client.stop();
     }
+    else
+    {
+        Serial.println("Failed to connect to weather api server");
+    }
+    
     return result;
 }
 
-GeoInfo QWeather::GetGeoInfo(String location,String adm = "", String range = "cn")
+GeoInfo QWeather::GetGeoInfo(String location,String adm, String range)
 {
-    return GetGeoInfoList(location,adm,range)[0];
+    return GetGeoInfoList(location,adm,range,1)[0];
 }

@@ -8,46 +8,9 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <string>
+
 using namespace std;
-/**
- * @brief Language define
- * 
- */
-enum lang
-{
-    zh,
-    zh_hans,
-    zh_hant,
-    en,
-    de,
-    es,
-    fr,
-    it,
-    ja,
-    ko,
-    ru,
-    hi,
-    th,
-    ar,
-    pt,
-    bn,
-    ms,
-    nl,
-    el,
-    la,
-    sv,
-    id,
-    pl,
-    tr,
-    cs,
-    et,
-    vi,
-    fil,
-    fi,
-    he,
-    is,
-    nb
-};
+
 
 struct GeoInfo {
     String name;
@@ -73,17 +36,17 @@ class QWeather
 {
 private:
     String _key;
-    lang _lang;
-    String GetLanguage(lang l);
+    String _lang;
+    String GetLanguage();
 
 public:
     /**
      * @brief Construct a new QWeather object
      * 
      * @param key User key
-     * @param l Language
+     * @param l Language, Refer to: https://dev.qweather.com/docs/start/language 
      */
-    QWeather(String key, lang l);
+    QWeather(String key, String l =  "zh");
     /**
      * @brief Set the User Key
      * 
@@ -93,9 +56,9 @@ public:
     /**
      * @brief Set the content Language 
      * 
-     * @param l 
+     * @param l 语言，参见 https://dev.qweather.com/docs/start/language
      */
-    void SetLanguage(lang l);
+    void SetLanguage(String l);
 
     /**
      * @brief 按照查询条件返回可能的城市信息列表
@@ -106,7 +69,7 @@ public:
      * @param maxNumber 返回城市的数量，取值范围1-20，默认返回10个结果。
      * @return vector<GeoInfo> 
      */
-    vector<GeoInfo> GetGeoInfoList(String location, String adm, String range,uint8_t maxNumber);
+    vector<GeoInfo> GetGeoInfoList(String location, String adm = "", String range = "cn",uint8_t maxNumber = 10);
 
     /**
      * @brief 按照查询条件返回最有可能的一个城市
@@ -116,7 +79,7 @@ public:
      * @param range 搜索范围，默认搜索全球城市。 可设定只在某个国家范围内进行搜索，国家名称需使用ISO 3166 所定义的国家代码。例如 range=us 或者 range=world 查询全球
      * @return GeoInfo 
      */
-    GeoInfo GetGeoInfo(String location, String adm, String range);
+    GeoInfo GetGeoInfo(String location, String adm = "", String range = "cn");
 };
 
 

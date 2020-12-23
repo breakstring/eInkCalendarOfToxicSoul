@@ -343,10 +343,20 @@ void setup()
   SmartConfigManager scm;
   scm.initWiFi(ShowWiFiSmartConfig);
 
+  
+
   MyIP myIP(Language::CHINESE);
   Serial.printf("IP: %s\n",myIP.IP.c_str());  
   Serial.printf("City: %s\n",myIP.City.c_str());  
+  
+  QWeather qwAPI(QWEATHER_API_KEY);
+
+
+  GeoInfo gi = qwAPI.GetGeoInfo(myIP.City,myIP.Province);
+  Serial.println(gi.id);
+
   Serial.println("setup done");
+
 }
 
 void loop()
