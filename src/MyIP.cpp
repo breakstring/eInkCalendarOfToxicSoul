@@ -3,7 +3,8 @@
 const char *GET_IP_LOCATION_URL_EN = "https://api.myip.la/en?json";
 const char *GET_IP_LOCATION_URL_CN = "https://api.myip.la/cn?json";
 
-MyIP::MyIP(Language language)
+
+MyIP::MyIP(Language language = Language::CHINESE)
 {
     WiFiClientSecure client;
     client.setInsecure();
@@ -21,9 +22,7 @@ MyIP::MyIP(Language language)
             deserializeJson(doc, payload);
 
             
-
-            IP = doc["ip"].as<String>();
-            
+            IP = doc["ip"].as<String>();            
             JsonObject location = doc["location"];
             City = location["city"].as<String>();                 // "北京"
             CountryCode = location["country_code"].as<String>(); // "CN"

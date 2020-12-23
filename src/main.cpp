@@ -71,7 +71,7 @@
 #include "config.h"
 #include "SmartConfigManager.h"
 #include "MyIP.h"
-
+#include "QWeather.h"
 
 
 

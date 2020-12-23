@@ -7,7 +7,10 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 
-
+/**
+ * @brief Language of the geolocation information. 
+ * 
+ */
 enum Language
 {
     CHINESE,
@@ -15,6 +18,10 @@ enum Language
 };
 
 
+/**
+ * @brief Get IP Address and Geolocation from https://api.myip.la/
+ * 
+ */
 class MyIP
 {
 
@@ -24,13 +31,36 @@ public:
      * 
      */
     String IP;
+    /**
+     * @brief Country Code
+     * 
+     */
     String CountryCode;
+    /**
+     * @brief Country Name
+     * 
+     */
     String CountryName;
+    /**
+     * @brief Provice Name
+     * 
+     */
     String Province;
+    /**
+     * @brief City
+     * 
+     */
     String City;
+    /**
+     * @brief Latitude
+     * 
+     */
     String Latitude;
+    /**
+     * @brief Longitude
+     * 
+     */
     String Longitude;
-
 
 
     /**
