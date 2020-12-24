@@ -66,7 +66,7 @@
 #include <GxEPD2_7C.h>
 #include <U8g2_for_Adafruit_GFX.h>
 #include <ArduinoJson.h>
-#include "Preferences.h"
+
 
 #include "config.h"
 #include "SmartConfigManager.h"
@@ -294,7 +294,7 @@ GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=5*/ 15, /*DC=*
 #endif
 
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
-Preferences preferences;
+
 
 void helloWorld()
 {
@@ -353,9 +353,22 @@ void setup()
 
 
   GeoInfo gi = qwAPI.GetGeoInfo(myIP.City,myIP.Province);
-  Serial.println(gi.id);
+  //Serial.println(gi.id);
+  CurrentWeather cw = qwAPI.GetCurrentWeather(gi.id);
+  Serial.printf("Current temperature:%s\n", cw.temp.c_str());
+
+  vector<DailyWeather> dws=qwAPI.GetDailyWeather(gi.id);
+  Serial.printf("Get daily data of %u days.\n", dws.size());
+  Serial.printf("Today min temperature:%s\n",dws[0].tempMin.c_str());
+
+
+  vector<HourlyWeather> hws = qwAPI.GetHourlyWeather(gi.id);
+  Serial.printf("Get Hourly data of %u hours.\n", hws.size());
+  Serial.printf("Current  temperature:%s\n",hws[0].temp.c_str());
 
   Serial.println("setup done");
+
+
 
 }
 
