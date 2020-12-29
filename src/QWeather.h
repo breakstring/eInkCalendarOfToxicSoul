@@ -380,6 +380,102 @@ struct GeoInfo
     String fxLink;
 };
 
+
+
+/**
+ * @brief 空气质量基础数据
+ * 
+ */
+struct AirQualityData
+{
+    /**
+     * @brief 空气质量发布时间
+     * 
+     */
+    String pubTime;
+    /**
+     * @brief 空气质量指数
+     * 
+     */
+    String aqi;
+    /**
+     * @brief 空气质量等级
+     * 
+     */
+    String level;
+    /**
+     * @brief 空气质量级别
+     * 
+     */
+    String category;
+    /**
+     * @brief 主要污染物
+     * 
+     */
+    String primary;
+    /**
+     * @brief PM10
+     * 
+     */
+    String pm10;
+    /**
+     * @brief PM2.5
+     * 
+     */
+    String pm2p5;
+    /**
+     * @brief 二氧化碳
+     * 
+     */
+    String no2;
+    /**
+     * @brief 二氧化硫
+     * 
+     */
+    String so2;
+    /**
+     * @brief 一氧化碳
+     * 
+     */
+    String co;
+    /**
+     * @brief 臭氧
+     * 
+     */
+    String o3;
+};
+/**
+ * @brief 空气质量监测站数据
+ * 
+ */
+struct AirStationData : AirQualityData
+{
+
+    /**
+     * @brief 站点名称
+     * 
+     */
+    String name;
+    /**
+     * @brief 站点ID
+     * 
+     */
+    String id;
+};
+
+/**
+ * @brief 当前空气质量
+ * 
+ */
+struct CurrentAirQuality: AirQualityData
+{
+    /**
+     * @brief 当前城市各个空气监测站数据
+     * 
+     */
+    vector<AirStationData> Stations;
+};
+
 /**
  * @brief 和风天气API
  * 
@@ -476,6 +572,14 @@ public:
      * @return vector<HourlyWeather> 
      */
     vector<HourlyWeather> GetHourlyWeather(String location, HourlyPredictionType hourlyPredictionType = HourlyPredictionType::H24);
+
+    /**
+     * @brief 获取当前空气质量
+     * 
+     * @param location 需要查询地区的LocationID或以逗号分隔的经度/纬度坐标（十进制），LocationID可通过GetGeoInfo获取。例如： location=101010100 或 location=116.41,39.92
+     * @return CurrentAirQuality 
+     */
+    CurrentAirQuality GetCurrentAirQuality(String location);
 };
 
 #endif

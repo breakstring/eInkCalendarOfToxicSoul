@@ -18,6 +18,18 @@ const String QWEATHER_WEATHERAPI_BASE_URL_COMMERCIAL = "https://api.qweather.com
  */
 const String QWEATHER_WEATHERAPI_BASE_URL_DEV = "https://devapi.qweather.com/v7/weather";
 
+
+/**
+ * @brief 和风天气预报和实况信息查询商业版基地址
+ * 
+ */
+const String QWEATHER_AIRAPI_BASE_URL_COMMERCIAL = "https://api.qweather.com/v7/air";
+/**
+ * @brief 和风天气预报和实况信息查询开发版基地址
+ * 
+ */
+const String QWEATHER_AIRAPI_BASE_URL_DEV = "https://devapi.qweather.com/v7/air";
+
 QWeather::QWeather(String key, String l, UnitType unitType, APIVersion apiVersion)
 {
     _key = key;
@@ -228,7 +240,6 @@ vector<HourlyWeather> QWeather::GetHourlyWeather(String location, HourlyPredicti
     HTTPClient httpClient;
     vector<HourlyWeather> result;
     String requestUrl = ((_apiVersion == APIVersion::DEV) ? QWEATHER_WEATHERAPI_BASE_URL_DEV : QWEATHER_WEATHERAPI_BASE_URL_COMMERCIAL) + "/"+ String(hourlyPredictionType) +"h?gzip=n" + "&location=" + location + "&key=" + _key + "&lang=" + _lang + "&unit=" + ((_unitType == UnitType::METRIC) ? "m" : "i");
-    Serial.println(requestUrl);
     if (httpClient.begin(requestUrl))
     {
         u8_t httpCode = httpClient.GET();
@@ -273,4 +284,71 @@ vector<HourlyWeather> QWeather::GetHourlyWeather(String location, HourlyPredicti
     httpClient.end();
     client.stop();
     return result;    
+}
+
+CurrentAirQuality QWeather::GetCurrentAirQuality(String location)
+{
+    WiFiClientSecure client;
+    client.setInsecure();
+    HTTPClient httpClient;
+    CurrentAirQuality result;
+    String requestUrl = ((_apiVersion == APIVersion::DEV) ? QWEATHER_AIRAPI_BASE_URL_DEV : QWEATHER_AIRAPI_BASE_URL_COMMERCIAL) + "/now?gzip=n" +  "&location=" + location + "&key=" + _key + "&lang=" + _lang;
+    Serial.println(requestUrl);
+    if (httpClient.begin(requestUrl))
+    {
+        u8_t httpCode = httpClient.GET();
+        if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
+        {
+            String payload = httpClient.getString();
+            Serial.println(payload);
+            DynamicJsonDocument doc(8192);
+            deserializeJson(doc, payload);
+
+            JsonObject now = doc["now"];
+            result.pubTime = now["pubTime"].as<String>(); 
+            result.aqi = now["aqi"].as<String>();
+            result.level = now["level"].as<String>();
+            result.category = now["category"].as<String>();
+            result.primary = now["primary"].as<String>();
+            result.pm10 = now["pm10"].as<String>();
+            result.pm2p5 = now["pm2p5"].as<String>();
+            result.no2 = now["no2"].as<String>();
+            result.so2 = now["so2"].as<String>();
+            result.co = now["co"].as<String>();
+            result.o3 = now["o3"].as<String>();
+
+            JsonArray stationsArray = doc["station"].as<JsonArray>();
+            for (JsonVariant v : stationsArray)
+            {
+                JsonObject s = v.as<JsonObject>();
+                AirStationData asd;
+                asd.pubTime = s["pubTime"].as<String>();
+                asd.name = s["name"].as<String>();
+                asd.id = s["id"].as<String>();
+                asd.aqi = s["aqi"].as<String>();
+                asd.level = s["level"].as<String>();
+                asd.category = s["category"].as<String>();
+                asd.primary = s["primary"].as<String>();
+                asd.pm10 = s["pm10"].as<String>();
+                asd.pm2p5 = s["pm2p5"].as<String>();
+                asd.no2 = s["no2"].as<String>();
+                asd.so2 = s["so2"].as<String>();
+                asd.co = s["co"].as<String>();
+                asd.o3 = s["o3"].as<String>();
+                result.Stations.push_back(asd);
+            }
+        }
+        else
+        {
+            Serial.printf("Connect to air quality api failed, the http status code is:%u\n", httpCode);
+        }
+    }
+    else
+    {
+        Serial.println("Get current air quality failed");
+    }
+
+    httpClient.end();
+    client.stop();
+    return result;  
 }

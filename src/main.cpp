@@ -67,14 +67,10 @@
 #include <U8g2_for_Adafruit_GFX.h>
 #include <ArduinoJson.h>
 
-
 #include "config.h"
 #include "SmartConfigManager.h"
 #include "MyIP.h"
 #include "QWeather.h"
-
-
-
 
 #if defined(ESP8266)
 // select one and adapt to your mapping, can use full buffer size (full HEIGHT)
@@ -170,14 +166,14 @@
 //GxEPD2_BW<GxEPD2_213_B72, GxEPD2_213_B72::HEIGHT> display(GxEPD2_213_B72(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4)); // GDEH0213B72
 //GxEPD2_BW<GxEPD2_213_B73, GxEPD2_213_B73::HEIGHT> display(GxEPD2_213_B73(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4)); // GDEH0213B73
 //GxEPD2_BW<GxEPD2_213_flex, GxEPD2_213_flex::HEIGHT> display(GxEPD2_213_flex(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4)); // GDEW0213I5F
-GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=5*/ 15, /*DC=*/27, /*RST=*/26, /*BUSY=*/25));
+//GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=5*/ 15, /*DC=*/27, /*RST=*/26, /*BUSY=*/25));
 //GxEPD2_BW<GxEPD2_290_T5, GxEPD2_290_T5::HEIGHT> display(GxEPD2_290_T5(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4)); // GDEW029T5
 //GxEPD2_BW<GxEPD2_260, GxEPD2_260::HEIGHT> display(GxEPD2_260(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
 //GxEPD2_BW<GxEPD2_270, GxEPD2_270::HEIGHT> display(GxEPD2_270(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
 //GxEPD2_BW<GxEPD2_371, GxEPD2_371::HEIGHT> display(GxEPD2_371(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
 //GxEPD2_BW<GxEPD2_420, GxEPD2_420::HEIGHT> display(GxEPD2_420(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
-//GxEPD2_BW<GxEPD2_583, GxEPD2_583::HEIGHT> display(GxEPD2_583(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
-//GxEPD2_BW<GxEPD2_583_T8, GxEPD2_583_T8::HEIGHT> display(GxEPD2_583_T8(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
+//GxEPD2_BW<GxEPD2_583, GxEPD2_583::HEIGHT> display(GxEPD2_583(/*CS=5*/ 15, /*DC=*/ 27, /*RST=*/ 26, /*BUSY=*/ 25));
+GxEPD2_BW<GxEPD2_583_T8, GxEPD2_583_T8::HEIGHT> display(GxEPD2_583_T8(/*CS=5*/ 15, /*DC=*/27, /*RST=*/26, /*BUSY=*/25));
 //GxEPD2_BW<GxEPD2_750, GxEPD2_750::HEIGHT> display(GxEPD2_750(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
 //GxEPD2_BW<GxEPD2_750_T7, GxEPD2_750_T7::HEIGHT> display(GxEPD2_750_T7(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4)); // GDEW075T7 800x480
 // 3-color e-papers
@@ -301,19 +297,30 @@ GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=5*/ 15, /*DC=*
 #define FileClass fs::File
 #define EPD_CS SS
 
+#include "u8g2_mfxinran_92_number.h"
+#include "u8g2_mfyuehei_18_gb2312.h"
+#include "u8g2_mfyuanhei_18_gb2312.h"
+
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
 
+#include <ESPDateTime.h>
+
+const char *WEEKDAY[] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
+const char *MONTH[] = {"一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"};
+const uint16_t SMARTCONFIG_QR_CODE_WIDTH = 120;
+const uint16_t SMARTCONFIG_QR_CODE_HEIGHT = 120;
 
 void helloWorld()
 {
   //Serial.println("helloWorld");
   uint16_t bg = GxEPD_WHITE;
   uint16_t fg = GxEPD_BLACK;
-  u8g2Fonts.setFontMode(1);                     // use u8g2 transparent mode (this is default)
-  u8g2Fonts.setFontDirection(0);                // left to right (this is default)
-  u8g2Fonts.setForegroundColor(fg);             // apply Adafruit GFX color
-  u8g2Fonts.setBackgroundColor(bg);             // apply Adafruit GFX color
-  u8g2Fonts.setFont(u8g2_font_wqy16_t_gb2312b); // select u8g2 font from here: https://github.com/olikraus/u8g2/wiki/fntlistall
+  u8g2Fonts.setFontMode(1);         // use u8g2 transparent mode (this is default)
+  u8g2Fonts.setFontDirection(0);    // left to right (this is default)
+  u8g2Fonts.setForegroundColor(fg); // apply Adafruit GFX color
+  u8g2Fonts.setBackgroundColor(bg); // apply Adafruit GFX color
+
+  u8g2Fonts.setFont(u8g2_mfxinran_92_number);
   uint16_t x = (display.width() - 160) / 2;
   uint16_t y = display.height() / 2;
   display.firstPage();
@@ -324,28 +331,23 @@ void helloWorld()
     u8g2Fonts.setFontDirection(0); // left to right (this is default)
 
     u8g2Fonts.setCursor(x, y); // start writing at this position
-    u8g2Fonts.drawUTF8(0, 100, "世界你好，世界!hah哼哼哈嘿abc的我们一起来吧跳舞啊~");
+    u8g2Fonts.drawUTF8(0, 100, "28");
   } while (display.nextPage());
   //Serial.println("helloWorld done");
 }
 
-void ShowWiFiSmartConfig()
-{
-  //TODO: show smart_config
-  Serial.println("Should show smartconfig information");
-}
-
 static const uint16_t input_buffer_pixels = 800; // may affect performance
 
-static const uint16_t max_row_width = 800; // for up to 7.5" display 800x480
+static const uint16_t max_row_width = 800;      // for up to 7.5" display 800x480
 static const uint16_t max_palette_pixels = 256; // for depth <= 8
 
-uint8_t input_buffer[3 * input_buffer_pixels]; // up to depth 24
-uint8_t output_row_mono_buffer[max_row_width / 8]; // buffer for at least one row of b/w bits
-uint8_t output_row_color_buffer[max_row_width / 8]; // buffer for at least one row of color bits
-uint8_t mono_palette_buffer[max_palette_pixels / 8]; // palette buffer for depth <= 8 b/w
+uint8_t input_buffer[3 * input_buffer_pixels];        // up to depth 24
+uint8_t output_row_mono_buffer[max_row_width / 8];    // buffer for at least one row of b/w bits
+uint8_t output_row_color_buffer[max_row_width / 8];   // buffer for at least one row of color bits
+uint8_t mono_palette_buffer[max_palette_pixels / 8];  // palette buffer for depth <= 8 b/w
 uint8_t color_palette_buffer[max_palette_pixels / 8]; // palette buffer for depth <= 8 c/w
-uint16_t read16(fs::File& f)
+uint16_t rgb_palette_buffer[max_palette_pixels];      // palette buffer for depth <= 8 for buffered graphics, needed for 7-color display
+uint16_t read16(fs::File &f)
 {
   // BMP data is stored little-endian, same as Arduino.
   uint16_t result;
@@ -354,7 +356,7 @@ uint16_t read16(fs::File& f)
   return result;
 }
 
-uint32_t read32(fs::File& f)
+uint32_t read32(fs::File &f)
 {
   // BMP data is stored little-endian, same as Arduino.
   uint32_t result;
@@ -365,13 +367,25 @@ uint32_t read32(fs::File& f)
   return result;
 }
 
-void drawBitmapFromSpiffs(const char *filename, int16_t x, int16_t y, bool with_color)
+void setupDateTime()
+{
+  DateTime.setTimeZone(8);
+  DateTime.begin(/* timeout param */);
+  if (!DateTime.isTimeValid())
+  {
+    Serial.println("Failed to get time from server.");
+  }
+}
+
+void drawBitmapFromSpiffs_Buffered(const char *filename, int16_t x, int16_t y, bool with_color, bool partial_update, bool overwrite)
 {
   fs::File file;
   bool valid = false; // valid format to be handled
-  bool flip = true; // bitmap is stored bottom-to-top
+  bool flip = true;   // bitmap is stored bottom-to-top
+  bool has_multicolors = display.epd2.panel == GxEPD2::ACeP565;
   uint32_t startTime = millis();
-  if ((x >= display.epd2.WIDTH) || (y >= display.epd2.HEIGHT)) return;
+  if ((x >= display.width()) || (y >= display.height()))
+    return;
   Serial.println();
   Serial.print("Loading image '");
   Serial.print(filename);
@@ -393,24 +407,29 @@ void drawBitmapFromSpiffs(const char *filename, int16_t x, int16_t y, bool with_
     uint32_t creatorBytes = read32(file);
     uint32_t imageOffset = read32(file); // Start of image data
     uint32_t headerSize = read32(file);
-    uint32_t width  = read32(file);
+    uint32_t width = read32(file);
     uint32_t height = read32(file);
     uint16_t planes = read16(file);
     uint16_t depth = read16(file); // bits per pixel
     uint32_t format = read32(file);
     if ((planes == 1) && ((format == 0) || (format == 3))) // uncompressed is handled, 565 also
     {
-      Serial.print("File size: "); Serial.println(fileSize);
-      Serial.print("Image Offset: "); Serial.println(imageOffset);
-      Serial.print("Header size: "); Serial.println(headerSize);
-      Serial.print("Bit Depth: "); Serial.println(depth);
+      Serial.print("File size: ");
+      Serial.println(fileSize);
+      Serial.print("Image Offset: ");
+      Serial.println(imageOffset);
+      Serial.print("Header size: ");
+      Serial.println(headerSize);
+      Serial.print("Bit Depth: ");
+      Serial.println(depth);
       Serial.print("Image size: ");
       Serial.print(width);
       Serial.print('x');
       Serial.println(height);
       // BMP rows are padded (if needed) to 4-byte boundary
       uint32_t rowSize = (width * depth / 8 + 3) & ~3;
-      if (depth < 8) rowSize = ((width * depth + 8 - depth) / 8 + 3) & ~3;
+      if (depth < 8)
+        rowSize = ((width * depth + 8 - depth) / 8 + 3) & ~3;
       if (height < 0)
       {
         height = -height;
@@ -418,128 +437,144 @@ void drawBitmapFromSpiffs(const char *filename, int16_t x, int16_t y, bool with_
       }
       uint16_t w = width;
       uint16_t h = height;
-      if ((x + w - 1) >= display.epd2.WIDTH)  w = display.epd2.WIDTH  - x;
-      if ((y + h - 1) >= display.epd2.HEIGHT) h = display.epd2.HEIGHT - y;
-      if (w <= max_row_width) // handle with direct drawing
+      if ((x + w - 1) >= display.width())
+        w = display.width() - x;
+      if ((y + h - 1) >= display.height())
+        h = display.height() - y;
+      //if (w <= max_row_width) // handle with direct drawing
       {
         valid = true;
         uint8_t bitmask = 0xFF;
         uint8_t bitshift = 8 - depth;
         uint16_t red, green, blue;
         bool whitish, colored;
-        if (depth == 1) with_color = false;
+        if (depth == 1)
+          with_color = false;
         if (depth <= 8)
         {
-          if (depth < 8) bitmask >>= depth;
+          if (depth < 8)
+            bitmask >>= depth;
           //file.seek(54); //palette is always @ 54
           file.seek(imageOffset - (4 << depth)); // 54 for regular, diff for colorsimportant
           for (uint16_t pn = 0; pn < (1 << depth); pn++)
           {
-            blue  = file.read();
+            blue = file.read();
             green = file.read();
-            red   = file.read();
+            red = file.read();
             file.read();
             whitish = with_color ? ((red > 0x80) && (green > 0x80) && (blue > 0x80)) : ((red + green + blue) > 3 * 0x80); // whitish
-            colored = (red > 0xF0) || ((green > 0xF0) && (blue > 0xF0)); // reddish or yellowish?
-            if (0 == pn % 8) mono_palette_buffer[pn / 8] = 0;
+            colored = (red > 0xF0) || ((green > 0xF0) && (blue > 0xF0));                                                  // reddish or yellowish?
+            if (0 == pn % 8)
+              mono_palette_buffer[pn / 8] = 0;
             mono_palette_buffer[pn / 8] |= whitish << pn % 8;
-            if (0 == pn % 8) color_palette_buffer[pn / 8] = 0;
+            if (0 == pn % 8)
+              color_palette_buffer[pn / 8] = 0;
             color_palette_buffer[pn / 8] |= colored << pn % 8;
+            rgb_palette_buffer[pn] = ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | ((blue & 0xF8) >> 3);
           }
         }
-        display.clearScreen();
-        uint32_t rowPosition = flip ? imageOffset + (height - h) * rowSize : imageOffset;
-        for (uint16_t row = 0; row < h; row++, rowPosition += rowSize) // for each line
+        if (partial_update)
+          display.setPartialWindow(x, y, w, h);
+        else
+          display.setFullWindow();
+        display.firstPage();
+        do
         {
-          uint32_t in_remain = rowSize;
-          uint32_t in_idx = 0;
-          uint32_t in_bytes = 0;
-          uint8_t in_byte = 0; // for depth <= 8
-          uint8_t in_bits = 0; // for depth <= 8
-          uint8_t out_byte = 0xFF; // white (for w%8!=0 border)
-          uint8_t out_color_byte = 0xFF; // white (for w%8!=0 border)
-          uint32_t out_idx = 0;
-          file.seek(rowPosition);
-          for (uint16_t col = 0; col < w; col++) // for each pixel
+          if (!overwrite)
+            display.fillScreen(GxEPD_WHITE);
+          uint32_t rowPosition = flip ? imageOffset + (height - h) * rowSize : imageOffset;
+          for (uint16_t row = 0; row < h; row++, rowPosition += rowSize) // for each line
           {
-            // Time to read more pixel data?
-            if (in_idx >= in_bytes) // ok, exact match for 24bit also (size IS multiple of 3)
+            uint32_t in_remain = rowSize;
+            uint32_t in_idx = 0;
+            uint32_t in_bytes = 0;
+            uint8_t in_byte = 0; // for depth <= 8
+            uint8_t in_bits = 0; // for depth <= 8
+            uint16_t color = GxEPD_WHITE;
+            file.seek(rowPosition);
+            for (uint16_t col = 0; col < w; col++) // for each pixel
             {
-              in_bytes = file.read(input_buffer, in_remain > sizeof(input_buffer) ? sizeof(input_buffer) : in_remain);
-              in_remain -= in_bytes;
-              in_idx = 0;
-            }
-            switch (depth)
-            {
+              // Time to read more pixel data?
+              if (in_idx >= in_bytes) // ok, exact match for 24bit also (size IS multiple of 3)
+              {
+                in_bytes = file.read(input_buffer, in_remain > sizeof(input_buffer) ? sizeof(input_buffer) : in_remain);
+                in_remain -= in_bytes;
+                in_idx = 0;
+              }
+              switch (depth)
+              {
               case 24:
                 blue = input_buffer[in_idx++];
                 green = input_buffer[in_idx++];
                 red = input_buffer[in_idx++];
                 whitish = with_color ? ((red > 0x80) && (green > 0x80) && (blue > 0x80)) : ((red + green + blue) > 3 * 0x80); // whitish
-                colored = (red > 0xF0) || ((green > 0xF0) && (blue > 0xF0)); // reddish or yellowish?
+                colored = (red > 0xF0) || ((green > 0xF0) && (blue > 0xF0));                                                  // reddish or yellowish?
+                color = ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | ((blue & 0xF8) >> 3);
                 break;
               case 16:
+              {
+                uint8_t lsb = input_buffer[in_idx++];
+                uint8_t msb = input_buffer[in_idx++];
+                if (format == 0) // 555
                 {
-                  uint8_t lsb = input_buffer[in_idx++];
-                  uint8_t msb = input_buffer[in_idx++];
-                  if (format == 0) // 555
-                  {
-                    blue  = (lsb & 0x1F) << 3;
-                    green = ((msb & 0x03) << 6) | ((lsb & 0xE0) >> 2);
-                    red   = (msb & 0x7C) << 1;
-                  }
-                  else // 565
-                  {
-                    blue  = (lsb & 0x1F) << 3;
-                    green = ((msb & 0x07) << 5) | ((lsb & 0xE0) >> 3);
-                    red   = (msb & 0xF8);
-                  }
-                  whitish = with_color ? ((red > 0x80) && (green > 0x80) && (blue > 0x80)) : ((red + green + blue) > 3 * 0x80); // whitish
-                  colored = (red > 0xF0) || ((green > 0xF0) && (blue > 0xF0)); // reddish or yellowish?
+                  blue = (lsb & 0x1F) << 3;
+                  green = ((msb & 0x03) << 6) | ((lsb & 0xE0) >> 2);
+                  red = (msb & 0x7C) << 1;
+                  color = ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | ((blue & 0xF8) >> 3);
                 }
-                break;
+                else // 565
+                {
+                  blue = (lsb & 0x1F) << 3;
+                  green = ((msb & 0x07) << 5) | ((lsb & 0xE0) >> 3);
+                  red = (msb & 0xF8);
+                  color = (msb << 8) | lsb;
+                }
+                whitish = with_color ? ((red > 0x80) && (green > 0x80) && (blue > 0x80)) : ((red + green + blue) > 3 * 0x80); // whitish
+                colored = (red > 0xF0) || ((green > 0xF0) && (blue > 0xF0));                                                  // reddish or yellowish?
+              }
+              break;
               case 1:
               case 4:
               case 8:
+              {
+                if (0 == in_bits)
                 {
-                  if (0 == in_bits)
-                  {
-                    in_byte = input_buffer[in_idx++];
-                    in_bits = 8;
-                  }
-                  uint16_t pn = (in_byte >> bitshift) & bitmask;
-                  whitish = mono_palette_buffer[pn / 8] & (0x1 << pn % 8);
-                  colored = color_palette_buffer[pn / 8] & (0x1 << pn % 8);
-                  in_byte <<= depth;
-                  in_bits -= depth;
+                  in_byte = input_buffer[in_idx++];
+                  in_bits = 8;
                 }
-                break;
-            }
-            if (whitish)
-            {
-              // keep white
-            }
-            else if (colored && with_color)
-            {
-              out_color_byte &= ~(0x80 >> col % 8); // colored
-            }
-            else
-            {
-              out_byte &= ~(0x80 >> col % 8); // black
-            }
-            if ((7 == col % 8) || (col == w - 1)) // write that last byte! (for w%8!=0 border)
-            {
-              output_row_color_buffer[out_idx] = out_color_byte;
-              output_row_mono_buffer[out_idx++] = out_byte;
-              out_byte = 0xFF; // white (for w%8!=0 border)
-              out_color_byte = 0xFF; // white (for w%8!=0 border)
-            }
-          } // end pixel
-          uint16_t yrow = y + (flip ? h - row - 1 : row);
-          display.writeImage(output_row_mono_buffer, output_row_color_buffer, x, yrow, w, 1);
-        } // end line
-        Serial.print("loaded in "); Serial.print(millis() - startTime); Serial.println(" ms");
-        display.refresh();
+                uint16_t pn = (in_byte >> bitshift) & bitmask;
+                whitish = mono_palette_buffer[pn / 8] & (0x1 << pn % 8);
+                colored = color_palette_buffer[pn / 8] & (0x1 << pn % 8);
+                in_byte <<= depth;
+                in_bits -= depth;
+                color = rgb_palette_buffer[pn];
+              }
+              break;
+              }
+              if (with_color && has_multicolors)
+              {
+                // keep color
+              }
+              else if (whitish)
+              {
+                color = GxEPD_WHITE;
+              }
+              else if (colored && with_color)
+              {
+                color = GxEPD_COLORED;
+              }
+              else
+              {
+                color = GxEPD_BLACK;
+              }
+              uint16_t yrow = y + (flip ? h - row - 1 : row);
+              display.drawPixel(x + col, yrow, color);
+            } // end pixel
+          }   // end line
+        } while (display.nextPage());
+        Serial.print("loaded in ");
+        Serial.print(millis() - startTime);
+        Serial.println(" ms");
       }
     }
   }
@@ -550,6 +585,73 @@ void drawBitmapFromSpiffs(const char *filename, int16_t x, int16_t y, bool with_
   }
 }
 
+void DrawMultiLineString(string content, uint16_t x, uint16_t y, uint16_t contentAreaWidthWithMargin, uint16_t lineHeight)
+{
+  string ch;
+  vector<string> contentArray;
+  for (size_t i = 0, len = 0; i != content.length(); i += len)
+  {
+    unsigned char byte = (unsigned)content[i];
+    if (byte >= 0xFC)
+      len = 6;
+    else if (byte >= 0xF8)
+      len = 5;
+    else if (byte >= 0xF0)
+      len = 4;
+    else if (byte >= 0xE0)
+      len = 3;
+    else if (byte >= 0xC0)
+      len = 2;
+    else
+      len = 1;
+    ch = content.substr(i, len);
+    contentArray.push_back(ch);
+  }
+
+  
+  do
+  {
+    string outputContent;
+    for (size_t j = 0; j < contentArray.size(); j++)
+    {
+      outputContent += contentArray[j];
+      int16_t wTemp = u8g2Fonts.getUTF8Width(outputContent.c_str());
+      if (wTemp >= contentAreaWidthWithMargin || j == (contentArray.size() - 1))
+      {
+        u8g2Fonts.drawUTF8(x, y, outputContent.c_str());
+        y += lineHeight;
+        outputContent = "";
+      }
+    }
+  } while (display.nextPage());
+}
+
+void ShowWiFiSmartConfig()
+{
+  display.clearScreen();
+  display.setRotation(3);
+  const uint16_t w = display.width();
+  const uint16_t h = display.height();
+  Serial.printf("W:%u H:%u\n", w, h);
+  const uint16_t x = (w - SMARTCONFIG_QR_CODE_WIDTH) / 2;
+  const uint16_t y = (h - SMARTCONFIG_QR_CODE_HEIGHT) / 2;
+  uint16_t bg = GxEPD_WHITE;
+  uint16_t fg = GxEPD_BLACK;
+  display.fillScreen(bg);
+  u8g2Fonts.setFontMode(1);         // use u8g2 transparent mode (this is default)
+  u8g2Fonts.setFontDirection(0);    // left to right (this is default)
+  u8g2Fonts.setForegroundColor(fg); // apply Adafruit GFX color
+  u8g2Fonts.setBackgroundColor(bg); // apply Adafruit GFX color
+  u8g2Fonts.setFont(u8g2_mfyuehei_18_gb2312);
+  u8g2Fonts.setCursor(0, 0); // start writing at this position
+  uint16_t tipsY = y + SMARTCONFIG_QR_CODE_HEIGHT + 40;
+  
+  DrawMultiLineString("请用微信扫描上方的二维码或使用 ESPTouch 配置网络。", 90, tipsY, 300, 30);
+  //DrawMultiLineString("请用微信扫描上方的二维码或使用 ESPTouch 配置网络。", 90, tipsY-200, 300, 30);
+  drawBitmapFromSpiffs_Buffered("smartconfig.bmp", x, y, false, true, false);
+  //drawBitmapFromSpiffs_Buffered("102.bmp", 10, 10, false, true, false);
+}
+
 void setup()
 {
 
@@ -558,7 +660,7 @@ void setup()
   Serial.println("setup");
 
   display.init();
-  display.setRotation(3);
+  //display.setRotation(3);
   SPI.end();
   SPI.begin(13, 12, 14, 15);
   u8g2Fonts.begin(display); // connect u8g2 procedures to Adafruit GFX
@@ -566,52 +668,69 @@ void setup()
   SmartConfigManager scm;
   scm.initWiFi(ShowWiFiSmartConfig);
 
-  
-
   MyIP myIP(Language::CHINESE);
-  Serial.printf("IP: %s\n",myIP.IP.c_str());  
-  Serial.printf("City: %s\n",myIP.City.c_str());  
-  
+  Serial.printf("IP: %s\n", myIP.IP.c_str());
+  Serial.printf("City: %s\n", myIP.City.c_str());
+
   QWeather qwAPI(QWEATHER_API_KEY);
 
-
-  GeoInfo gi = qwAPI.GetGeoInfo(myIP.City,myIP.Province);
+  GeoInfo gi = qwAPI.GetGeoInfo(myIP.City, myIP.Province);
   //Serial.println(gi.id);
   CurrentWeather cw = qwAPI.GetCurrentWeather(gi.id);
   Serial.printf("Current temperature:%s\n", cw.temp.c_str());
 
-  vector<DailyWeather> dws=qwAPI.GetDailyWeather(gi.id);
+  vector<DailyWeather> dws = qwAPI.GetDailyWeather(gi.id);
   Serial.printf("Get daily data of %u days.\n", dws.size());
-  Serial.printf("Today min temperature:%s\n",dws[0].tempMin.c_str());
-
+  Serial.printf("Today min temperature:%s\n", dws[0].tempMin.c_str());
 
   vector<HourlyWeather> hws = qwAPI.GetHourlyWeather(gi.id);
   Serial.printf("Get Hourly data of %u hours.\n", hws.size());
-  Serial.printf("Current  temperature:%s\n",hws[0].temp.c_str());
+  Serial.printf("Current  temperature:%s\n", hws[0].temp.c_str());
 
-  //helloWorld();
+  CurrentAirQuality caq = qwAPI.GetCurrentAirQuality(gi.id);
+  Serial.printf("Current air quality: %s\n", caq.category.c_str());
+  Serial.printf("First station name: %s\n", caq.Stations[0].name.c_str());
+
 
   // Initialise SPIFFS
-  if (!SPIFFS.begin()) {
+  if (!SPIFFS.begin())
+  {
     Serial.println("SPIFFS initialisation failed!");
-    while (1) yield(); // Stay here twiddling thumbs waiting
+    while (1)
+      yield(); // Stay here twiddling thumbs waiting
   }
-  Serial.println("\r\nInitialisation done.");
+  Serial.println("\r\n SPIFFS Initialisation done.");
 
 
-
-  uint32_t t = millis();
-
-
-  // Get the width and height in pixels of the jpeg if you wish
-  drawBitmapFromSpiffs("smartconfig.bmp",0,0,false);
-  t = millis() - t;
-  Serial.print(t); Serial.println(" ms");
-
-  Serial.println("setup done");
+  setupDateTime();
 
 
+  Serial.println(DateTime.now());
+  Serial.println(DateTime.getTime());
+  Serial.println(DateTime.utcTime());
+  Serial.println("--------------------");
+  Serial.println(DateTime.toString());
+  Serial.println(DateTime.toISOString());
+  Serial.println(DateTime.toUTCString());
+  Serial.println("--------------------");
+  Serial.println(DateTime.format(DateFormatter::COMPAT));
+  Serial.println(DateTime.format(DateFormatter::DATE_ONLY));
+  Serial.println(DateTime.format(DateFormatter::TIME_ONLY));
+  Serial.println("--------------------");
+  DateTimeParts p = DateTime.getParts();
+  Serial.printf("%04d/%02d/%02d %02d:%02d:%02d %ld %+05d\n", p.getYear(),
+                p.getMonth(), p.getMonthDay(), p.getHours(), p.getMinutes(),
+                p.getSeconds(), p.getTime(), p.getTimeZone());
+  Serial.println("--------------------");
+  time_t t = DateTime.now();
+  Serial.println(DateFormatter::format("%Y/%m/%d %H:%M:%S", t));
+  Serial.println(DateFormatter::format("%x - %I:%M %p", t));
+  Serial.println(DateFormatter::format("Now it's %F %I:%M%p.", t));
+  Serial.println(WEEKDAY[DateTime.getParts().getWeekDay()]);
 
+
+  Serial.println("-------  SETUP FINISHED  -----------");
+  ShowWiFiSmartConfig();
 }
 
 void loop()
