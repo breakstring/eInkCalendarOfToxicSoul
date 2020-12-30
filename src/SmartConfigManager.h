@@ -1,5 +1,5 @@
-#ifndef SmartConfigManager_h
-#define SmartConfigManager_h
+#ifndef _SMARTCONFIGMANAGER_H
+#define _SMARTCONFIGMANAGER_H
 class SmartConfigManager
 {
 

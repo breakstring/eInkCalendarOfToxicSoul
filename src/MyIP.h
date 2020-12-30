@@ -1,5 +1,5 @@
-#ifndef MyIP_h
-#define MyIP_h
+#ifndef _MYIP_H
+#define _MYIP_H
 
 #include <Arduino.h>
 #include <ArduinoJson.h>

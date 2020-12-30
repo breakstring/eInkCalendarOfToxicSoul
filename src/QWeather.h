@@ -1,5 +1,5 @@
-#ifndef QWeather_h
-#define QWeather_h
+#ifndef _QWEATHER_H
+#define _QWEATHER_H
 
 #include <Arduino.h>
 #include <Vector>

@@ -1,5 +1,5 @@
-#ifndef urencode_h
-#define urlencode_h
+#ifndef _URLENCODE_H
+#define _URLENCODE_H
 // https://github.com/zenmanenergy/ESP8266-Arduino-Examples/blob/master/helloWorld_urlencoded/urlencode.ino
 
 
