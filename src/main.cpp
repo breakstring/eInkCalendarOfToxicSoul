@@ -298,44 +298,32 @@ GxEPD2_BW<GxEPD2_583_T8, GxEPD2_583_T8::HEIGHT> display(GxEPD2_583_T8(/*CS=5*/ 1
 #define EPD_CS SS
 
 #include "u8g2_mfxinran_92_number.h"
+#include "u8g2_deng_56_temperature.h"
+
 #include "u8g2_mfyuehei_18_gb2312.h"
-#include "u8g2_mfyuanhei_18_gb2312.h"
+#include "u8g2_mfyuehei_14_gb2312.h"
+#include "u8g2_mfyuehei_12_gb2312.h"
+
+#include "u8g2_mfyuanhei_16_gb2312.h"
 
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
-
+#include "toxicsoul.h"
 #include <ESPDateTime.h>
 
-const char *WEEKDAY[] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
-const char *MONTH[] = {"一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"};
+const char *WEEKDAY_CN[] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
+const char *WEEKDAY_EN[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+const char *MONTH_CN[] = {"一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"};
+const char *MONTH_EN[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 const uint16_t SMARTCONFIG_QR_CODE_WIDTH = 120;
 const uint16_t SMARTCONFIG_QR_CODE_HEIGHT = 120;
-
-void helloWorld()
-{
-  //Serial.println("helloWorld");
-  uint16_t bg = GxEPD_WHITE;
-  uint16_t fg = GxEPD_BLACK;
-  u8g2Fonts.setFontMode(1);         // use u8g2 transparent mode (this is default)
-  u8g2Fonts.setFontDirection(0);    // left to right (this is default)
-  u8g2Fonts.setForegroundColor(fg); // apply Adafruit GFX color
-  u8g2Fonts.setBackgroundColor(bg); // apply Adafruit GFX color
-
-  u8g2Fonts.setFont(u8g2_mfxinran_92_number);
-  uint16_t x = (display.width() - 160) / 2;
-  uint16_t y = display.height() / 2;
-  display.firstPage();
-  do
-  {
-    display.fillScreen(bg);
-    u8g2Fonts.setFontMode(1);      // use u8g2 transparent mode (this is default)
-    u8g2Fonts.setFontDirection(0); // left to right (this is default)
-
-    u8g2Fonts.setCursor(x, y); // start writing at this position
-    u8g2Fonts.drawUTF8(0, 100, "28");
-  } while (display.nextPage());
-  //Serial.println("helloWorld done");
-}
-
+GeoInfo gi;
+int16_t DISPLAY_WIDTH;
+int16_t DISPLAY_HEIGHT;
+u8_t pageIndex = 0;
+QWeather qwAPI(QWEATHER_API_KEY);
+CurrentWeather cw;
+CurrentAirQuality caq;
+vector<DailyWeather> dws;
 static const uint16_t input_buffer_pixels = 800; // may affect performance
 
 static const uint16_t max_row_width = 800;      // for up to 7.5" display 800x480
@@ -384,7 +372,7 @@ void drawBitmapFromSpiffs_Buffered(const char *filename, int16_t x, int16_t y, b
   bool flip = true;   // bitmap is stored bottom-to-top
   bool has_multicolors = display.epd2.panel == GxEPD2::ACeP565;
   uint32_t startTime = millis();
-  if ((x >= display.width()) || (y >= display.height()))
+  if ((x >= DISPLAY_WIDTH) || (y >= DISPLAY_HEIGHT))
     return;
   Serial.println();
   Serial.print("Loading image '");
@@ -437,10 +425,10 @@ void drawBitmapFromSpiffs_Buffered(const char *filename, int16_t x, int16_t y, b
       }
       uint16_t w = width;
       uint16_t h = height;
-      if ((x + w - 1) >= display.width())
-        w = display.width() - x;
-      if ((y + h - 1) >= display.height())
-        h = display.height() - y;
+      if ((x + w - 1) >= DISPLAY_WIDTH)
+        w = DISPLAY_WIDTH - x;
+      if ((y + h - 1) >= DISPLAY_HEIGHT)
+        h = DISPLAY_HEIGHT - y;
       //if (w <= max_row_width) // handle with direct drawing
       {
         valid = true;
@@ -608,48 +596,186 @@ void DrawMultiLineString(string content, uint16_t x, uint16_t y, uint16_t conten
     contentArray.push_back(ch);
   }
 
-  
-  do
+  string outputContent;
+  for (size_t j = 0; j < contentArray.size(); j++)
   {
-    string outputContent;
-    for (size_t j = 0; j < contentArray.size(); j++)
+    outputContent += contentArray[j];
+    int16_t wTemp = u8g2Fonts.getUTF8Width(outputContent.c_str());
+    if (wTemp >= contentAreaWidthWithMargin || j == (contentArray.size() - 1))
     {
-      outputContent += contentArray[j];
-      int16_t wTemp = u8g2Fonts.getUTF8Width(outputContent.c_str());
-      if (wTemp >= contentAreaWidthWithMargin || j == (contentArray.size() - 1))
-      {
-        u8g2Fonts.drawUTF8(x, y, outputContent.c_str());
-        y += lineHeight;
-        outputContent = "";
-      }
+      u8g2Fonts.drawUTF8(x, y, outputContent.c_str());
+      y += lineHeight;
+      outputContent = "";
     }
-  } while (display.nextPage());
+  }
 }
 
 void ShowWiFiSmartConfig()
 {
-  display.clearScreen();
-  display.setRotation(3);
-  const uint16_t w = display.width();
-  const uint16_t h = display.height();
-  Serial.printf("W:%u H:%u\n", w, h);
-  const uint16_t x = (w - SMARTCONFIG_QR_CODE_WIDTH) / 2;
-  const uint16_t y = (h - SMARTCONFIG_QR_CODE_HEIGHT) / 2;
-  uint16_t bg = GxEPD_WHITE;
-  uint16_t fg = GxEPD_BLACK;
-  display.fillScreen(bg);
-  u8g2Fonts.setFontMode(1);         // use u8g2 transparent mode (this is default)
-  u8g2Fonts.setFontDirection(0);    // left to right (this is default)
-  u8g2Fonts.setForegroundColor(fg); // apply Adafruit GFX color
-  u8g2Fonts.setBackgroundColor(bg); // apply Adafruit GFX color
+  display.clearScreen(GxEPD_WHITE);
+
+  const uint16_t x = (DISPLAY_WIDTH - SMARTCONFIG_QR_CODE_WIDTH) / 2;
+  const uint16_t y = (DISPLAY_HEIGHT - SMARTCONFIG_QR_CODE_HEIGHT) / 2;
+
   u8g2Fonts.setFont(u8g2_mfyuehei_18_gb2312);
-  u8g2Fonts.setCursor(0, 0); // start writing at this position
   uint16_t tipsY = y + SMARTCONFIG_QR_CODE_HEIGHT + 40;
-  
-  DrawMultiLineString("请用微信扫描上方的二维码或使用 ESPTouch 配置网络。", 90, tipsY, 300, 30);
-  //DrawMultiLineString("请用微信扫描上方的二维码或使用 ESPTouch 配置网络。", 90, tipsY-200, 300, 30);
+
+  display.firstPage();
+  do
+  {
+    DrawMultiLineString("请用微信扫描上方的二维码或使用 ESPTouch 配置网络。", 90, tipsY, 300, 30);
+  } while (display.nextPage());
   drawBitmapFromSpiffs_Buffered("smartconfig.bmp", x, y, false, true, false);
-  //drawBitmapFromSpiffs_Buffered("102.bmp", 10, 10, false, true, false);
+}
+
+enum PageContent : u8_t
+{
+  CALENDAR = 0,
+  WEATHER = 1
+};
+
+void ShowPageHeader()
+{
+  u8g2Fonts.setFont(u8g2_mfyuanhei_16_gb2312);
+  u8g2Fonts.drawUTF8(48, 64, DateTime.format(DateFormatter::DATE_ONLY).c_str());
+
+  int16_t cityNameWidth = u8g2Fonts.getUTF8Width(gi.name.c_str());
+  u8g2Fonts.drawUTF8((DISPLAY_WIDTH - cityNameWidth - 48), 64, gi.name.c_str());
+
+  u8g2Fonts.setFont(u8g2_mfyuehei_14_gb2312);
+  u8g2Fonts.drawUTF8(48, 64 + 24, WEEKDAY_EN[DateTime.getParts().getWeekDay()]);
+}
+void ShowCurrentDate()
+{
+  String dateInCenter = String(DateTime.getParts().getMonthDay());
+  int m = DateTime.getParts().getMonth();
+
+  u8g2Fonts.setFont(u8g2_mfxinran_92_number);
+  int16_t dateWidth = u8g2Fonts.getUTF8Width(dateInCenter.c_str());
+  u8g2Fonts.drawUTF8((DISPLAY_WIDTH - dateWidth) / 2, 300, dateInCenter.c_str());
+
+  u8g2Fonts.setFont(u8g2_mfyuehei_14_gb2312);
+  int16_t monthWidth = u8g2Fonts.getUTF8Width(MONTH_EN[m]);
+  u8g2Fonts.drawUTF8((DISPLAY_WIDTH - monthWidth) / 2, 340, MONTH_EN[m]);
+}
+
+void ShowToxicSoul()
+{
+  u16_t r = random(ToxicSoulCount);
+  const char *soul = ToxicSoul[r];
+  Serial.printf("pick %u: %s\n", r, soul);
+  u8g2Fonts.setFont(u8g2_mfyuehei_18_gb2312);
+  DrawMultiLineString(string(soul), 80, 420, 300, 36);
+}
+
+void ShowWeatherFoot()
+{
+  String foot = cw.text;
+  foot.concat(" / 空气质量等级-");
+  foot.concat(caq.category);
+  foot.concat(" / 体感温度 ");
+  foot.concat(cw.feelsLike);
+  foot.concat("°C");
+
+  u8g2Fonts.setFont(u8g2_mfyuehei_14_gb2312);
+  u8g2Fonts.drawUTF8(88, DISPLAY_HEIGHT - 24, foot.c_str());
+}
+
+void ShowWeatherContent()
+{
+  u8g2Fonts.setFont(u8g2_deng_56_temperature);
+  String tempString = cw.temp;
+  tempString.concat("℃");
+  int16_t tempWidth = u8g2Fonts.getUTF8Width(tempString.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - tempWidth + DISPLAY_WIDTH)/2, 240 , tempString.c_str());
+
+  u8g2Fonts.setFont(u8g2_mfyuehei_14_gb2312);
+  String qwfw = dws[0].tempMin;
+  qwfw.concat("° ~ ");
+  qwfw.concat(dws[0].tempMax);
+  qwfw.concat("°");
+  int16_t dqwdWidth = u8g2Fonts.getUTF8Width(qwfw.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - dqwdWidth + DISPLAY_WIDTH)/2, 280 , qwfw.c_str());
+
+
+  String l1 = cw.text;
+  int16_t l1W = u8g2Fonts.getUTF8Width(l1.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - l1W)/2,270,l1.c_str());
+  
+  String l2 = cw.windDir;
+  l2.concat(cw.windScale);
+  l2.concat("级");
+  int16_t l2W = u8g2Fonts.getUTF8Width(l2.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - l2W)/2,300,l2.c_str());
+
+  display.drawLine(DISPLAY_WIDTH / 2, 140,DISPLAY_WIDTH/ 2,330,GxEPD_BLACK);
+
+}
+
+void ShowPage(PageContent pageContent)
+{
+  // TODO: 应该判断下咋决定是否刷新
+  cw = qwAPI.GetCurrentWeather(gi.id);
+  caq = qwAPI.GetCurrentAirQuality(gi.id);
+  dws = qwAPI.GetDailyWeather(gi.id); 
+
+  display.setFullWindow();
+  display.clearScreen(GxEPD_WHITE);
+  display.setRotation(3);
+  u8g2Fonts.setFontMode(1);                  // use u8g2 transparent mode (this is default)
+  u8g2Fonts.setFontDirection(0);             // left to right (this is default)
+  u8g2Fonts.setForegroundColor(GxEPD_BLACK); // apply Adafruit GFX color
+  u8g2Fonts.setBackgroundColor(GxEPD_WHITE); // apply Adafruit GFX color
+
+  String iconFileSmall = "32/";
+  iconFileSmall.concat(cw.icon);
+  iconFileSmall.concat(".bmp");
+  String iconFileBig = "64/";
+  iconFileBig.concat(cw.icon);
+  iconFileBig.concat(".bmp");
+  /**
+   * @brief 先写文字
+   * 
+   */
+  display.firstPage();
+  do
+  {
+    /**
+     * @brief 头部都用一样的吧
+     * 
+     */
+    ShowPageHeader();
+
+    switch (pageContent)
+    {
+    case PageContent::CALENDAR:
+      
+      ShowCurrentDate();
+      break;
+    case PageContent::WEATHER:
+      ShowWeatherContent();
+      break;
+    }
+
+    ShowToxicSoul();
+    ShowWeatherFoot();
+
+  } while (display.nextPage());
+
+  /**
+   * @brief 貌似没法让u8g2和平共处，所以只能先输出文字再输出需要显示的图片，导致整体刷新时间太长。
+   * 
+   */
+  switch (pageContent)
+  {
+  case PageContent::CALENDAR:
+    drawBitmapFromSpiffs_Buffered(iconFileSmall.c_str(), 48, DISPLAY_HEIGHT - 48, false, true, false);
+    break;
+  case PageContent::WEATHER:
+    drawBitmapFromSpiffs_Buffered(iconFileSmall.c_str(), 48, DISPLAY_HEIGHT - 48, false, true, false);
+    drawBitmapFromSpiffs_Buffered(iconFileBig.c_str(), 96, 180, false, true, false);
+    break;
+  }
 }
 
 void setup()
@@ -658,39 +784,8 @@ void setup()
   Serial.begin(115200);
   Serial.println();
   Serial.println("setup");
-
-  display.init();
-  //display.setRotation(3);
   SPI.end();
   SPI.begin(13, 12, 14, 15);
-  u8g2Fonts.begin(display); // connect u8g2 procedures to Adafruit GFX
-
-  SmartConfigManager scm;
-  scm.initWiFi(ShowWiFiSmartConfig);
-
-  MyIP myIP(Language::CHINESE);
-  Serial.printf("IP: %s\n", myIP.IP.c_str());
-  Serial.printf("City: %s\n", myIP.City.c_str());
-
-  QWeather qwAPI(QWEATHER_API_KEY);
-
-  GeoInfo gi = qwAPI.GetGeoInfo(myIP.City, myIP.Province);
-  //Serial.println(gi.id);
-  CurrentWeather cw = qwAPI.GetCurrentWeather(gi.id);
-  Serial.printf("Current temperature:%s\n", cw.temp.c_str());
-
-  vector<DailyWeather> dws = qwAPI.GetDailyWeather(gi.id);
-  Serial.printf("Get daily data of %u days.\n", dws.size());
-  Serial.printf("Today min temperature:%s\n", dws[0].tempMin.c_str());
-
-  vector<HourlyWeather> hws = qwAPI.GetHourlyWeather(gi.id);
-  Serial.printf("Get Hourly data of %u hours.\n", hws.size());
-  Serial.printf("Current  temperature:%s\n", hws[0].temp.c_str());
-
-  CurrentAirQuality caq = qwAPI.GetCurrentAirQuality(gi.id);
-  Serial.printf("Current air quality: %s\n", caq.category.c_str());
-  Serial.printf("First station name: %s\n", caq.Stations[0].name.c_str());
-
 
   // Initialise SPIFFS
   if (!SPIFFS.begin())
@@ -699,40 +794,53 @@ void setup()
     while (1)
       yield(); // Stay here twiddling thumbs waiting
   }
-  Serial.println("\r\n SPIFFS Initialisation done.");
+  Serial.println("\r\nSPIFFS Initialisation done.");
 
+  display.init();
+  display.setRotation(3);
+  DISPLAY_WIDTH = display.width();
+  DISPLAY_HEIGHT = display.height();
+
+  u8g2Fonts.begin(display);                  // connect u8g2 procedures to Adafruit GFX
+  u8g2Fonts.setFontMode(1);                  // use u8g2 transparent mode (this is default)
+  u8g2Fonts.setFontDirection(0);             // left to right (this is default)
+  u8g2Fonts.setForegroundColor(GxEPD_BLACK); // apply Adafruit GFX color
+  u8g2Fonts.setBackgroundColor(GxEPD_WHITE); // apply Adafruit GFX color
+
+  SmartConfigManager scm;
+  scm.initWiFi(ShowWiFiSmartConfig);
+
+  MyIP myIP(Language::CHINESE);
+  Serial.printf("IP: %s\n", myIP.IP.c_str());
+  Serial.printf("City: %s\n", myIP.City.c_str());
+
+  gi = qwAPI.GetGeoInfo(myIP.City, myIP.Province);
+
+  /*
+
+
+  vector<HourlyWeather> hws = qwAPI.GetHourlyWeather(gi.id);
+  Serial.printf("Get Hourly data of %u hours.\n", hws.size());
+  Serial.printf("Current  temperature:%s\n", hws[0].temp.c_str());
+*/
 
   setupDateTime();
 
-
-  Serial.println(DateTime.now());
-  Serial.println(DateTime.getTime());
-  Serial.println(DateTime.utcTime());
-  Serial.println("--------------------");
-  Serial.println(DateTime.toString());
-  Serial.println(DateTime.toISOString());
-  Serial.println(DateTime.toUTCString());
-  Serial.println("--------------------");
-  Serial.println(DateTime.format(DateFormatter::COMPAT));
-  Serial.println(DateTime.format(DateFormatter::DATE_ONLY));
-  Serial.println(DateTime.format(DateFormatter::TIME_ONLY));
-  Serial.println("--------------------");
-  DateTimeParts p = DateTime.getParts();
-  Serial.printf("%04d/%02d/%02d %02d:%02d:%02d %ld %+05d\n", p.getYear(),
-                p.getMonth(), p.getMonthDay(), p.getHours(), p.getMinutes(),
-                p.getSeconds(), p.getTime(), p.getTimeZone());
-  Serial.println("--------------------");
-  time_t t = DateTime.now();
-  Serial.println(DateFormatter::format("%Y/%m/%d %H:%M:%S", t));
-  Serial.println(DateFormatter::format("%x - %I:%M %p", t));
-  Serial.println(DateFormatter::format("Now it's %F %I:%M%p.", t));
-  Serial.println(WEEKDAY[DateTime.getParts().getWeekDay()]);
-
-
   Serial.println("-------  SETUP FINISHED  -----------");
-  ShowWiFiSmartConfig();
+  //ShowWiFiSmartConfig();
+  //ShowPage(PageContent::CALENDAR);
+  display.clearScreen();
 }
 
 void loop()
 {
+
+  if (pageIndex > PageContent::WEATHER)
+    pageIndex = PageContent::CALENDAR;
+
+  ShowPage((PageContent)pageIndex);
+
+  pageIndex++;
+
+  delay(15000);
 }
