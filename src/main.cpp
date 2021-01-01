@@ -297,20 +297,19 @@ GxEPD2_BW<GxEPD2_583_T8, GxEPD2_583_T8::HEIGHT> display(GxEPD2_583_T8(/*CS=5*/ 1
 #define FileClass fs::File
 #define EPD_CS SS
 
+// TODO: 清理或者缩小不必要的字体
 #include "u8g2_mfxinran_92_number.h"
 #include "u8g2_deng_56_temperature.h"
-
 #include "u8g2_mfyuehei_18_gb2312.h"
 #include "u8g2_mfyuehei_14_gb2312.h"
 #include "u8g2_mfyuehei_12_gb2312.h"
-
 #include "u8g2_mfyuanhei_16_gb2312.h"
 
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
 #include "toxicsoul.h"
 #include <ESPDateTime.h>
 
-const char *WEEKDAY_CN[] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
+const char *WEEKDAY_CN[] = {"周日", "周一", "周二", "周三", "周四", "周五", "周六"};
 const char *WEEKDAY_EN[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 const char *MONTH_CN[] = {"一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"};
 const char *MONTH_EN[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
@@ -683,38 +682,64 @@ void ShowWeatherFoot()
 
 void ShowWeatherContent()
 {
+
   u8g2Fonts.setFont(u8g2_deng_56_temperature);
-  String tempString = cw.temp;
-  tempString.concat("℃");
-  int16_t tempWidth = u8g2Fonts.getUTF8Width(tempString.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - tempWidth + DISPLAY_WIDTH)/2, 240 , tempString.c_str());
+  String currentAQIString = caq.aqi;
+  int16_t tempWidth = u8g2Fonts.getUTF8Width(currentAQIString.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - tempWidth + DISPLAY_WIDTH)/2, 190 , currentAQIString.c_str());
 
   u8g2Fonts.setFont(u8g2_mfyuehei_14_gb2312);
-  String qwfw = dws[0].tempMin;
-  qwfw.concat("° ~ ");
-  qwfw.concat(dws[0].tempMax);
-  qwfw.concat("°");
-  int16_t dqwdWidth = u8g2Fonts.getUTF8Width(qwfw.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - dqwdWidth + DISPLAY_WIDTH)/2, 280 , qwfw.c_str());
+  String currentAQICategoryString = "空气质量:";
+  currentAQICategoryString.concat(caq.category);
+  int16_t categoryWidth = u8g2Fonts.getUTF8Width(currentAQICategoryString.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - categoryWidth + DISPLAY_WIDTH)/2, 245 , currentAQICategoryString.c_str());
 
+  String currentPM25 = "PM2.5: ";
+  currentPM25.concat(caq.pm2p5);
+  int16_t pm25Width = u8g2Fonts.getUTF8Width(currentPM25.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - pm25Width + DISPLAY_WIDTH)/2, 275 , currentPM25.c_str());
+
+  String currentPM10 = "PM10: ";
+  currentPM10.concat(caq.pm10);
+  int16_t pm10Width = u8g2Fonts.getUTF8Width(currentPM10.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2)- pm10Width + DISPLAY_WIDTH)/2,305,currentPM10.c_str());
+
+  
 
   String l1 = cw.text;
   int16_t l1W = u8g2Fonts.getUTF8Width(l1.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - l1W)/2,270,l1.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - l1W)/2,230,l1.c_str());
   
   String l2 = cw.windDir;
   l2.concat(cw.windScale);
   l2.concat("级");
   int16_t l2W = u8g2Fonts.getUTF8Width(l2.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - l2W)/2,300,l2.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - l2W)/2,260,l2.c_str());
+
+  String qwfw = dws[0].tempMin;
+  qwfw.concat("° ~ ");
+  qwfw.concat(dws[0].tempMax);
+  qwfw.concat("°");
+  int16_t dqwdWidth = u8g2Fonts.getUTF8Width(qwfw.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - dqwdWidth)/2, 290 , qwfw.c_str());
+
+  String tempCurrent = "当前气温";
+  tempCurrent.concat(cw.temp);
+  tempCurrent.concat("°");
+  int16_t tempCurrentWidth = u8g2Fonts.getUTF8Width(tempCurrent.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - tempCurrentWidth)/2,320,tempCurrent.c_str());
 
   display.drawLine(DISPLAY_WIDTH / 2, 140,DISPLAY_WIDTH/ 2,330,GxEPD_BLACK);
 
+
+  u8g2Fonts.setFont(u8g2_mfyuehei_12_gb2312);
+  String test = "-22° ~ -88°";
+  Serial.printf("每天需要的气温宽度:%u\n",u8g2Fonts.getUTF8Width(test.c_str()));
 }
 
 void ShowPage(PageContent pageContent)
 {
-  // TODO: 应该判断下咋决定是否刷新
+  // TODO: 应该判断下咋决定是否刷新。例如距离上次请求超过多少小时再请求。
   cw = qwAPI.GetCurrentWeather(gi.id);
   caq = qwAPI.GetCurrentAirQuality(gi.id);
   dws = qwAPI.GetDailyWeather(gi.id); 
@@ -773,7 +798,7 @@ void ShowPage(PageContent pageContent)
     break;
   case PageContent::WEATHER:
     drawBitmapFromSpiffs_Buffered(iconFileSmall.c_str(), 48, DISPLAY_HEIGHT - 48, false, true, false);
-    drawBitmapFromSpiffs_Buffered(iconFileBig.c_str(), 96, 180, false, true, false);
+    drawBitmapFromSpiffs_Buffered(iconFileBig.c_str(), 88, 140, false, true, false);
     break;
   }
 }
