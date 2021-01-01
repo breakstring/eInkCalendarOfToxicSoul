@@ -867,5 +867,5 @@ void loop()
 
   pageIndex++;
 
-  delay(15000);
+  delay(1000 * 60 * 10);
 }
