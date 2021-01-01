@@ -36,13 +36,13 @@
 - **相关服务**：
     - [IP地址查询](https://www.myip.la/)：用来通过当前设备的IP地址查询得知当前位置。具体可见 [src/MyIP.h](src/MyIP.h) 和 [src/MyIP.cpp](src/MyIP.cpp)
     - 字体：项目中的字体使用了[造字工房](https://www.makefont.com/)的部分非商用字体来生成。如您要使用，请确保在其[授权范围](https://www.makefont.com/authorization.html)内使用。
-    - 天气服务：这里用了[和风天气开发平台](https://dev.qweather.com/)的服务。所以需要您前往注册账号并获取到自己的一个应用程序Key来替换[src/config.h](src/config.h)中的占位符
+    - 天气服务：这里用了[和风天气开发平台](https://dev.qweather.com/)的服务。所以需要您前往注册账号并获取到自己的一个应用程序Key来替换[src/config.h](src/config.h)中的占位符。具体相关代码可以参见 [src/QWeather.h](src/QWeather.h) 和 [src/QWeather.cpp](src/QWeather.cpp)
 ```cpp
 const String QWEATHER_API_KEY = "********************";
 ```
 ## 成品
 只需要简单的替换源代码中你的和风天气API的Key，然后把程序烧录到开发板里，用热熔胶和其他工具把它固定到镜框里，连接上电源。一个**毒鸡汤电子墨水屏日历**就完工了。
-
+<img src="images/finish.jpg" alt="毒鸡汤电子墨水屏日历" width=640 />
 <img src="images/finish_back.jpg" alt="成品背面" width=400 />
 <img src="images/finish_1.jpg" alt="成品" width=400 />
 <img src="images/finish_2.jpg" alt="成品" width=400 />
