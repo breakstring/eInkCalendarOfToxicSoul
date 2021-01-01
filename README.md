@@ -42,6 +42,7 @@ const String QWEATHER_API_KEY = "********************";
 ```
 ## 成品
 只需要简单的替换源代码中你的和风天气API的Key，然后把程序烧录到开发板里，用热熔胶和其他工具把它固定到镜框里，连接上电源。一个**毒鸡汤电子墨水屏日历**就完工了。
+
 <img src="images/finish_back.jpg" alt="成品背面" width=400 />
 <img src="images/finish_1.jpg" alt="成品" width=400 />
 <img src="images/finish_2.jpg" alt="成品" width=400 />
