@@ -17,7 +17,7 @@
 <img src="images/ESP32-DevKitC.png" alt="ESP32 DevKitC开发板" width=300 />
 <img src="images/e-Paper-ESP32-Driver-Board-intro.jpg" alt="微雪ESP32电子墨水屏开发板" width=400 />
 
-- **电源**：在开发过程中，可以通过电脑上的USB接口用micro USB线直接通过开发板来进行供电和调试工作。如果您想要在实际使用中摆脱开电源线的话，我建议您从伟大的某宝上找一块自带micro USB充放接口的锂电池。更具电池的容量不同价格可能不一，不过一般也都是在50元以下，可选择的太多这里我就不放链接了。
+- **电源**：在开发过程中，可以通过电脑上的USB接口用micro USB线直接通过开发板来进行供电和调试工作。如果您想要在实际使用中摆脱开电源线的话，我建议您从伟大的某宝上找一块自带micro USB充放接口的锂电池。根据电池的容量不同价格可能不一，不过一般也都是在50元以下，可选择的太多这里我就不放链接了。
 
 <img src="images/battery.jpg" width=300 />
 
@@ -34,6 +34,7 @@
     - 对于中文字库的生成我使用了前几天撸的一个[懒人工具](https://github.com/breakstring/u8g2_fontmaker)来配合U8g2 for Adafruit GFX.
     - [ArduinoJSON](https://arduinojson.org/):要处理JSON字符串现在少不了它了。
 - **相关服务**：
+    - 毒鸡汤：毒鸡汤的内容并没有采用网络上现有的某个API来处理，而是直接硬编码到了[src/toxicsoul.h](src/toxicsoul.h)里。一是觉得又要申请什么API Key之类的太麻烦，服务还不一定长期有效，二是觉得内容不可控有点不放心。所以只不过随手从网上搜了搜一些别人提供的毒鸡汤内容，然后综合整理去重，简单的清洗掉过长或者过时，或者一眼看上去就比较三俗的内容。当然，我也没有耐心挨个去看这好几千条，所以毕竟会有疏忽的地方。如果您有更好的内容或者觉得现有内容有不合适的地方或者说您觉得哪些内容侵犯了您的权利，欢迎提出PR。
     - [IP地址查询](https://www.myip.la/)：用来通过当前设备的IP地址查询得知当前位置。具体可见 [src/MyIP.h](src/MyIP.h) 和 [src/MyIP.cpp](src/MyIP.cpp)
     - 字体：项目中的字体使用了[造字工房](https://www.makefont.com/)的部分非商用字体来生成。如您要使用，请确保在其[授权范围](https://www.makefont.com/authorization.html)内使用。
     - 天气服务：这里用了[和风天气开发平台](https://dev.qweather.com/)的服务。所以需要您前往注册账号并获取到自己的一个应用程序Key来替换[src/config.h](src/config.h)中的占位符。具体相关代码可以参见 [src/QWeather.h](src/QWeather.h) 和 [src/QWeather.cpp](src/QWeather.cpp)
@@ -51,3 +52,4 @@ const String QWEATHER_API_KEY = "********************";
 - 增加更多内容。。。数据都有就看怎么画好看了。
 - u8g2Fonts引擎和GxEPD2原生绘图之间的冲突问题，目前只能先写完文字刷新后再重新画图然后再刷新。存在二次刷新问题。
 - 改善网络的刷新机制，目前比较懒，所以是每次请求时都会刷新。
+- 清理不必要的字体/缩减字体文件大小。目前为了省事儿，所以打包进了太多字体占用了太多空间，回头有时间得要清理下。
