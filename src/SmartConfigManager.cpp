@@ -11,7 +11,6 @@ const char *scSSID;
 const char *scPassword;
 const u8_t WIFI_RECONNECT_LIMITATION = 30;
 
-
 /**
  * @brief 等待重连无线网络
  * 
@@ -27,11 +26,9 @@ bool SmartConfigManager::WaitingForConnectWiFiWithTimeout()
     Serial.print(".");
     reconnectCount++;
   }
-  
+
   return (WiFi.status() == WL_CONNECTED);
 }
-
-
 
 /**
  * @brief 尝试通过SmartConfig配置无线网络
@@ -55,47 +52,46 @@ bool SmartConfigManager::TryConnectWiFiWithSmartConfig(WaitingFormSmartConfigHan
   Serial.println("SmartConfig received.");
 
   return WaitingForConnectWiFiWithTimeout();
-
 }
-
 
 void SmartConfigManager::initWiFi(WaitingFormSmartConfigHandler handler)
 {
-    WiFi.mode(WIFI_AP_STA);
 
-    try
+
+  WiFi.mode(WIFI_AP_STA);
+
+  try
+  {
+    wifi_config_t conf;
+    esp_err_t espWiFiGetConfigResult = esp_wifi_get_config(WIFI_IF_STA, &conf); // load wifi settings to struct conf
+    if (espWiFiGetConfigResult == ESP_OK)
     {
-        wifi_config_t conf;
-        esp_err_t espWiFiGetConfigResult = esp_wifi_get_config(WIFI_IF_STA, &conf); // load wifi settings to struct conf
-        if (espWiFiGetConfigResult == ESP_OK)
+      scSSID = reinterpret_cast<const char *>(conf.sta.ssid);
+      scPassword = reinterpret_cast<const char *>(conf.sta.password);
+      WiFi_SSID = String(scSSID);
+      WiFi_Password = String(scPassword);
+      if (WiFi_SSID != "" && WiFi_Password != "")
+      {
+        Serial.println("Try connect WiFi with saved credentials.");
+        WiFi.reconnect();
+        if (WaitingForConnectWiFiWithTimeout())
         {
-            scSSID = reinterpret_cast<const char *>(conf.sta.ssid);
-            scPassword = reinterpret_cast<const char *>(conf.sta.password);
-            WiFi_SSID = String(scSSID);
-            WiFi_Password = String(scPassword);
-            if (WiFi_SSID != "" && WiFi_Password != "")
-            {
-                Serial.println("Try connect WiFi with saved credentials.");
-                WiFi.reconnect();
-                if (WaitingForConnectWiFiWithTimeout())
-                {
-                    Serial.printf("Connect WiFi successfully with IP: '%s'\n", WiFi.localIP().toString().c_str());
-                    return;
-                }
-            }
+          Serial.printf("Connect WiFi successfully with IP: '%s'\n", WiFi.localIP().toString().c_str());
+          return;
         }
+      }
     }
-    catch (const std::exception &e)
-    {
-        Serial.printf("Error: %s\n", e.what());
-    }
+  }
+  catch (const std::exception &e)
+  {
+    Serial.printf("Error: %s\n", e.what());
+  }
 
-    while (!TryConnectWiFiWithSmartConfig(handler))
-    {
-        Serial.println("Retry SmartConfig.");
-        WiFi.stopSmartConfig();
-    }
-    Serial.printf("Connect WiFi successfully with IP: '%s'\n", WiFi.localIP().toString().c_str());
-    return;
+  while (!TryConnectWiFiWithSmartConfig(handler))
+  {
+    Serial.println("Retry SmartConfig.");
+    WiFi.stopSmartConfig();
+  }
+  Serial.printf("Connect WiFi successfully with IP: '%s'\n", WiFi.localIP().toString().c_str());
+  return;
 }
-

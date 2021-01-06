@@ -30,14 +30,14 @@ const String QWEATHER_AIRAPI_BASE_URL_COMMERCIAL = "https://api.qweather.com/v7/
  */
 const String QWEATHER_AIRAPI_BASE_URL_DEV = "https://devapi.qweather.com/v7/air";
 
-QWeather::QWeather(String key, String l, UnitType unitType, APIVersion apiVersion)
-{
-    _key = key;
-    _lang = l;
-    _unitType = unitType;
-    _apiVersion = apiVersion;
-}
 
+void QWeather::Config(String key, String l, UnitType unitType, APIVersion apiVersion)
+{
+    SetUserKey(key);
+    SetLanguage(l);
+    SetUnitType(unitType);
+    SetAPIVersion(apiVersion);
+}
 void QWeather::SetAPIVersion(APIVersion apiVersion)
 {
     _apiVersion = apiVersion;
@@ -60,12 +60,14 @@ void QWeather::SetUnitType(UnitType unitType)
 
 vector<GeoInfo> QWeather::GetGeoInfoList(String location, String adm, String range, uint8_t maxNumber)
 {
+    Serial.println("GetGeoInfoList from QWeather");
     vector<GeoInfo> result;
     WiFiClientSecure client;
     client.setInsecure();
     HTTPClient httpClient;
 
     String encodedURL = QWEATHER_GEOAPI_BASE_URL + "/v2/city/lookup?key=" + _key + "&gzip=n&location=" + urlencode(location) + "&adm=" + urlencode(adm) + "&range=" + range + "&number=" + String(maxNumber) + "&lang=" + _lang;
+    Serial.println(encodedURL);
 
     if (httpClient.begin(encodedURL))
     {
@@ -73,7 +75,7 @@ vector<GeoInfo> QWeather::GetGeoInfoList(String location, String adm, String ran
         if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
         {
             String payload = httpClient.getString();
-            
+            Serial.println(payload);
             DynamicJsonDocument doc(8192);
             deserializeJson(doc, payload);
 

@@ -65,12 +65,6 @@
 #include <GxEPD2_3C.h>
 #include <GxEPD2_7C.h>
 #include <U8g2_for_Adafruit_GFX.h>
-#include <ArduinoJson.h>
-
-#include "config.h"
-#include "SmartConfigManager.h"
-#include "MyIP.h"
-#include "QWeather.h"
 
 #if defined(ESP8266)
 // select one and adapt to your mapping, can use full buffer size (full HEIGHT)
@@ -289,6 +283,13 @@ GxEPD2_BW<GxEPD2_583_T8, GxEPD2_583_T8::HEIGHT> display(GxEPD2_583_T8(/*CS=5*/ 1
 //GxEPD2_7C<GxEPD2_565c, MAX_HEIGHT_7C(GxEPD2_565c)> display(GxEPD2_565c(/*CS=10*/ SS, /*DC=*/ 8, /*RST=*/ 9, /*BUSY=*/ 7)); // Waveshare 5.65" 7-color
 #endif
 
+#include <ArduinoJson.h>
+#include "config.h"
+#include "SmartConfigManager.h"
+#include "MyIP.h"
+#include "QWeather.h"
+#include "esp_bt.h"
+#include "esp_wifi.h"
 #if defined(ESP32)
 #include "SPIFFS.h"
 #endif
@@ -319,7 +320,7 @@ GeoInfo gi;
 int16_t DISPLAY_WIDTH;
 int16_t DISPLAY_HEIGHT;
 u8_t pageIndex = 0;
-QWeather qwAPI(QWEATHER_API_KEY);
+QWeather qwAPI;
 CurrentWeather cw;
 CurrentAirQuality caq;
 vector<DailyWeather> dws;
@@ -334,6 +335,43 @@ uint8_t output_row_color_buffer[max_row_width / 8];   // buffer for at least one
 uint8_t mono_palette_buffer[max_palette_pixels / 8];  // palette buffer for depth <= 8 b/w
 uint8_t color_palette_buffer[max_palette_pixels / 8]; // palette buffer for depth <= 8 c/w
 uint16_t rgb_palette_buffer[max_palette_pixels];      // palette buffer for depth <= 8 for buffered graphics, needed for 7-color display
+
+// 根据 https://randomnerdtutorials.com/esp32-deep-sleep-arduino-ide-wake-up-sources/ 的评论中所描述，
+// 在偶然的电源消耗问题造成的重启过程中，可能会导致数据丢失。所以他用了RTC_NOINIT_ATTR 代替了 RTC_DATA_ATTR
+RTC_NOINIT_ATTR u8_t LASTPAGE = -1;
+
+#define uS_TO_S_FACTOR 1000000 /* Conversion factor for micro seconds to seconds */
+#define TIME_TO_SLEEP 60 * 15  /* Time ESP32 will go to sleep (in seconds) */
+
+void print_wakeup_reason()
+{
+  esp_sleep_wakeup_cause_t wakeup_reason;
+
+  wakeup_reason = esp_sleep_get_wakeup_cause();
+
+  switch (wakeup_reason)
+  {
+  case ESP_SLEEP_WAKEUP_EXT0:
+    Serial.println("Wakeup caused by external signal using RTC_IO");
+    break;
+  case ESP_SLEEP_WAKEUP_EXT1:
+    Serial.println("Wakeup caused by external signal using RTC_CNTL");
+    break;
+  case ESP_SLEEP_WAKEUP_TIMER:
+    Serial.println("Wakeup caused by timer");
+    break;
+  case ESP_SLEEP_WAKEUP_TOUCHPAD:
+    Serial.println("Wakeup caused by touchpad");
+    break;
+  case ESP_SLEEP_WAKEUP_ULP:
+    Serial.println("Wakeup caused by ULP program");
+    break;
+  default:
+    Serial.printf("Wakeup was not caused by deep sleep: %d\n", wakeup_reason);
+    break;
+  }
+}
+
 uint16_t read16(fs::File &f)
 {
   // BMP data is stored little-endian, same as Arduino.
@@ -686,55 +724,52 @@ void ShowWeatherContent()
   u8g2Fonts.setFont(u8g2_deng_56_temperature);
   String currentAQIString = caq.aqi;
   int16_t tempWidth = u8g2Fonts.getUTF8Width(currentAQIString.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - tempWidth + DISPLAY_WIDTH)/2, 190 , currentAQIString.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH / 2) - tempWidth + DISPLAY_WIDTH) / 2, 190, currentAQIString.c_str());
 
   u8g2Fonts.setFont(u8g2_mfyuehei_14_gb2312);
   String currentAQICategoryString = "空气质量:";
   currentAQICategoryString.concat(caq.category);
   int16_t categoryWidth = u8g2Fonts.getUTF8Width(currentAQICategoryString.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - categoryWidth + DISPLAY_WIDTH)/2, 245 , currentAQICategoryString.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH / 2) - categoryWidth + DISPLAY_WIDTH) / 2, 245, currentAQICategoryString.c_str());
 
   String currentPM25 = "PM2.5: ";
   currentPM25.concat(caq.pm2p5);
   int16_t pm25Width = u8g2Fonts.getUTF8Width(currentPM25.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - pm25Width + DISPLAY_WIDTH)/2, 275 , currentPM25.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH / 2) - pm25Width + DISPLAY_WIDTH) / 2, 275, currentPM25.c_str());
 
   String currentPM10 = "PM10: ";
   currentPM10.concat(caq.pm10);
   int16_t pm10Width = u8g2Fonts.getUTF8Width(currentPM10.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2)- pm10Width + DISPLAY_WIDTH)/2,305,currentPM10.c_str());
-
-  
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH / 2) - pm10Width + DISPLAY_WIDTH) / 2, 305, currentPM10.c_str());
 
   String l1 = cw.text;
   int16_t l1W = u8g2Fonts.getUTF8Width(l1.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - l1W)/2,230,l1.c_str());
-  
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH / 2) - l1W) / 2, 230, l1.c_str());
+
   String l2 = cw.windDir;
   l2.concat(cw.windScale);
   l2.concat("级");
   int16_t l2W = u8g2Fonts.getUTF8Width(l2.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - l2W)/2,260,l2.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH / 2) - l2W) / 2, 260, l2.c_str());
 
   String qwfw = dws[0].tempMin;
   qwfw.concat("° ~ ");
   qwfw.concat(dws[0].tempMax);
   qwfw.concat("°");
   int16_t dqwdWidth = u8g2Fonts.getUTF8Width(qwfw.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - dqwdWidth)/2, 290 , qwfw.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH / 2) - dqwdWidth) / 2, 290, qwfw.c_str());
 
   String tempCurrent = "当前气温";
   tempCurrent.concat(cw.temp);
   tempCurrent.concat("°");
   int16_t tempCurrentWidth = u8g2Fonts.getUTF8Width(tempCurrent.c_str());
-  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH/2) - tempCurrentWidth)/2,320,tempCurrent.c_str());
+  u8g2Fonts.drawUTF8(((DISPLAY_WIDTH / 2) - tempCurrentWidth) / 2, 320, tempCurrent.c_str());
 
-  display.drawLine(DISPLAY_WIDTH / 2, 140,DISPLAY_WIDTH/ 2,330,GxEPD_BLACK);
-
+  display.drawLine(DISPLAY_WIDTH / 2, 140, DISPLAY_WIDTH / 2, 330, GxEPD_BLACK);
 
   u8g2Fonts.setFont(u8g2_mfyuehei_12_gb2312);
   String test = "-22° ~ -88°";
-  Serial.printf("每天需要的气温宽度:%u\n",u8g2Fonts.getUTF8Width(test.c_str()));
+  Serial.printf("每天需要的气温宽度:%u\n", u8g2Fonts.getUTF8Width(test.c_str()));
 }
 
 void ShowPage(PageContent pageContent)
@@ -742,7 +777,7 @@ void ShowPage(PageContent pageContent)
   // TODO: 应该判断下咋决定是否刷新。例如距离上次请求超过多少小时再请求。
   cw = qwAPI.GetCurrentWeather(gi.id);
   caq = qwAPI.GetCurrentAirQuality(gi.id);
-  dws = qwAPI.GetDailyWeather(gi.id); 
+  dws = qwAPI.GetDailyWeather(gi.id);
 
   display.setFullWindow();
   display.clearScreen(GxEPD_WHITE);
@@ -774,7 +809,7 @@ void ShowPage(PageContent pageContent)
     switch (pageContent)
     {
     case PageContent::CALENDAR:
-      
+
       ShowCurrentDate();
       break;
     case PageContent::WEATHER:
@@ -809,6 +844,13 @@ void setup()
   Serial.begin(115200);
   Serial.println();
   Serial.println("setup");
+
+  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+  Serial.println("Setup ESP32 to sleep for every " + String(TIME_TO_SLEEP) + " Seconds");
+
+  //Print the wakeup reason for ESP32
+  print_wakeup_reason();
+
   SPI.end();
   SPI.begin(13, 12, 14, 15);
 
@@ -835,37 +877,36 @@ void setup()
   SmartConfigManager scm;
   scm.initWiFi(ShowWiFiSmartConfig);
 
+  qwAPI.Config(QWEATHER_API_KEY);
+
   MyIP myIP(Language::CHINESE);
   Serial.printf("IP: %s\n", myIP.IP.c_str());
   Serial.printf("City: %s\n", myIP.City.c_str());
 
   gi = qwAPI.GetGeoInfo(myIP.City, myIP.Province);
-
-  /*
-
-
-  vector<HourlyWeather> hws = qwAPI.GetHourlyWeather(gi.id);
-  Serial.printf("Get Hourly data of %u hours.\n", hws.size());
-  Serial.printf("Current  temperature:%s\n", hws[0].temp.c_str());
-*/
+  Serial.printf("从和风天气中取到匹配城市: %s\n", gi.name.c_str());
 
   setupDateTime();
 
+  ++LASTPAGE;
+  if (LASTPAGE > PageContent::WEATHER)
+    LASTPAGE = PageContent::CALENDAR;
+
+  ShowPage((PageContent)LASTPAGE);
+
   Serial.println("-------  SETUP FINISHED  -----------");
-  //ShowWiFiSmartConfig();
-  //ShowPage(PageContent::CALENDAR);
-  display.clearScreen();
+  Serial.println("睡吧。。。睡吧。。。zzzzzZZZZZZZ~~ ~~ ~~");
+  Serial.flush();
+
+  /**
+   * @brief 关掉蓝牙和WiFi,进入Deep sleep模式
+   * 
+   */
+  esp_bt_controller_disable();
+  esp_wifi_stop();
+  esp_deep_sleep_start();
 }
 
 void loop()
 {
-
-  if (pageIndex > PageContent::WEATHER)
-    pageIndex = PageContent::CALENDAR;
-
-  ShowPage((PageContent)pageIndex);
-
-  pageIndex++;
-
-  delay(1000 * 60 * 10);
 }

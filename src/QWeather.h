@@ -491,15 +491,6 @@ private:
 
 public:
     /**
-     * @brief Construct a new QWeather object
-     * 
-     * @param key User key
-     * @param l Language, Refer to: https://dev.qweather.com/docs/start/language 
-     * @param unitType 度量单位
-     * @param apiVersion API请求类型
-     */
-    QWeather(String key, String l = "zh", UnitType unitType = UnitType::METRIC, APIVersion apiVersion = APIVersion::DEV);
-    /**
      * @brief Set the User Key
      * 
      * @param key User key
@@ -580,6 +571,15 @@ public:
      * @return CurrentAirQuality 
      */
     CurrentAirQuality GetCurrentAirQuality(String location);
+    /**
+     * @brief 配置和风API参数
+     * 
+     * @param key User key
+     * @param l Language, Refer to: https://dev.qweather.com/docs/start/language 
+     * @param unitType 度量单位
+     * @param apiVersion API请求类型
+     */
+    void Config(String key, String l = "zh", UnitType unitType = UnitType::METRIC, APIVersion apiVersion = APIVersion::DEV);
 };
 
 #endif
