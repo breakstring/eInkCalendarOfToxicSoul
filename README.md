@@ -26,7 +26,7 @@
 
 ### 软件
 - **框架**：ESP32上的应用程序可以采用多种软件框架和语言来开发，例如Espressif自己的EDF-IDF框架，或者大家熟悉的Arduino。对我来说，还是用Arduino比较方便点，毕竟里面有许多大量的现成的第三方库可以使用。
-- **开发工具**：虽然使用了Arduino框架，但是我还是放弃了Arduino自有的IDE，那玩意儿太难用了，谁用谁知道。都2020年（误，写文档的今天已经是2021年了）我自然是推荐使用[Visual Studio Code](https://code.visualstudio.com/)了，和Git的整合，各种语法高亮快捷跳转。。。相比之下Arduino IDE简直是小盆友的玩具。使用VSCode你来开发Arduino应用的话也还有两个选择，使用[微软自己的Arduino插件](https://github.com/Microsoft/vscode-arduino)，或者使用[PlatformIO](https://platformio.org/)。它也是VSCode的插件，但是内置了各种嵌入式硬件平台和框架和库的整合。用它来做Arduino开发简直要爽到飞起。不过PlatformIO和微软的Arduino插件有冲突只能二选一（我个人还是推荐PlatformIO）。<img src="images/platformio.png" alt="PlatformIO IDE" />
+- **开发工具**：虽然使用了Arduino框架，但是我还是放弃了Arduino自有的IDE，那玩意儿太难用了，谁用谁知道。都2020年（误，写文档的今天已经是2021年了）我自然是推荐使用[Visual Studio Code](https://code.visualstudio.com/)了，和Git的整合，各种语法高亮快捷跳转。。。相比之下Arduino IDE简直是小盆友的玩具。使用VSCode你来开发Arduino应用的话也还有两个选择，使用[微软自己的Arduino插件](https://github.com/Microsoft/vscode-arduino)，或者使用[PlatformIO](https://platformio.org/)。它也是VSCode的插件，但是内置了各种嵌入式硬件平台和框架和库的整合。用它来做Arduino开发简直要爽到飞起。不过PlatformIO和微软的Arduino插件有冲突只能二选一（我个人还是推荐PlatformIO）。尤其是本Repo中工程为PlatformIO工程，如果您希望在VSC中最小改动进行部署的话，那么您也使用PaltformIO是最好的选择。当然，使用原生 Arduino IDE 需要有一点点小的改动。<img src="images/platformio.png" alt="PlatformIO IDE" />
 - **相关类库**: 在本软件开发中，主要用到了如下第三方库
     - [Adafruit GFX](https://github.com/adafruit/Adafruit-GFX-Library): 由著名的电子硬件社区Adafruit提供的一套图形图像引擎。做各种需要显示输出的Arduino应用一般都少不了它了。
     - [GxEPD2](https://github.com/ZinggJM/GxEPD2):基于[Adafruit_GFX](https://github.com/adafruit/Adafruit-GFX-Library)库来驱动各种电子墨水屏。
@@ -42,9 +42,9 @@
 const String QWEATHER_API_KEY = "********************";
 ```
 ## 装配
-## 硬件
+### 硬件
 连接您的电子墨水屏到微雪的ESP32开发板上，其实很简单，就一个软排线接口，插上口按下卡扣就好。就不多说了。
-## 软件
+### 软件
 VSCode和PlatformIO IDE的安装我也不在累述，请自行完成。需要注意以下两点：
 - 修改和风天气API的Key，**别忘了**！
 <img src="images/step1.png" width=500 />
@@ -64,5 +64,5 @@ VSCode和PlatformIO IDE的安装我也不在累述，请自行完成。需要注
 - ~~加入ESP32的睡眠模式处理来节电~~，（已经完成）
 - 增加更多内容。。。数据都有就看怎么画好看了。
 - u8g2Fonts引擎和GxEPD2原生绘图之间的冲突问题，目前只能先写完文字刷新后再重新画图然后再刷新。存在二次刷新问题。
-- 改善网络的刷新机制，目前比较懒，所以是每次请求时都会刷新。(使用Deep Sleep机制，所以还是每次都刷新一下好)
+- ~~改善网络的刷新机制，目前比较懒，所以是每次请求时都会刷新。~~(使用Deep Sleep机制，所以还是每次都刷新一下好)
 - 清理不必要的字体/缩减字体文件大小。目前为了省事儿，所以打包进了太多字体占用了太多空间，回头有时间得要清理下。
