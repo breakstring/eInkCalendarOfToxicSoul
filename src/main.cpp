@@ -341,7 +341,7 @@ uint16_t rgb_palette_buffer[max_palette_pixels];      // palette buffer for dept
 RTC_NOINIT_ATTR u8_t LASTPAGE = -1;
 
 #define uS_TO_S_FACTOR 1000000 /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP 60 * 15  /* Time ESP32 will go to sleep (in seconds) */
+#define TIME_TO_SLEEP 60 * 60 * 3  /* 改变这里的值来调整你需要的休眠时间，这里最终的值为秒。 例如 60*60*3 最终会休眠3个小时 */ 
 
 void print_wakeup_reason()
 {
@@ -845,9 +845,6 @@ void setup()
   Serial.println();
   Serial.println("setup");
 
-  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
-  Serial.println("Setup ESP32 to sleep for every " + String(TIME_TO_SLEEP) + " Seconds");
-
   //Print the wakeup reason for ESP32
   print_wakeup_reason();
 
@@ -904,6 +901,8 @@ void setup()
    */
   esp_bt_controller_disable();
   esp_wifi_stop();
+  esp_sleep_enable_timer_wakeup((uint64_t)TIME_TO_SLEEP * uS_TO_S_FACTOR);
+  Serial.println("Setup ESP32 to sleep for every " + String(TIME_TO_SLEEP) + " Seconds");
   esp_deep_sleep_start();
 }
 
