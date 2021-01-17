@@ -890,6 +890,7 @@ void setup()
     LASTPAGE = PageContent::CALENDAR;
 
   ShowPage((PageContent)LASTPAGE);
+  display.hibernate();
 
   Serial.println("-------  SETUP FINISHED  -----------");
   Serial.println("睡吧。。。睡吧。。。zzzzzZZZZZZZ~~ ~~ ~~");
