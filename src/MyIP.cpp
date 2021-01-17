@@ -10,13 +10,15 @@ MyIP::MyIP(Language language = Language::CHINESE)
     client.setInsecure();
     HTTPClient httpClient;
 
-    if (httpClient.begin(client, (language == Language::CHINESE) ? GET_IP_LOCATION_URL_CN : GET_IP_LOCATION_URL_EN))
+    String MyIPAPI = (language == Language::CHINESE) ? GET_IP_LOCATION_URL_CN : GET_IP_LOCATION_URL_EN;
+    Serial.printf("Get IP from: %s\n", MyIPAPI.c_str());
+    if (httpClient.begin(client, MyIPAPI))
     {
         u8_t httpCode = httpClient.GET();
         if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
         {
             String payload = httpClient.getString();
-
+            Serial.println(payload);
             DynamicJsonDocument doc(384);
             deserializeJson(doc, payload);
 
