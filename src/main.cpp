@@ -309,6 +309,7 @@ GxEPD2_BW<GxEPD2_583_T8, GxEPD2_583_T8::HEIGHT> display(GxEPD2_583_T8(/*CS=5*/ 1
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
 #include "toxicsoul.h"
 #include <ESPDateTime.h>
+#include "IPAPI.h"
 
 const char *WEEKDAY_CN[] = {"周日", "周一", "周二", "周三", "周四", "周五", "周六"};
 const char *WEEKDAY_EN[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
@@ -876,11 +877,15 @@ void setup()
 
   qwAPI.Config(QWEATHER_API_KEY);
 
-  MyIP myIP(Language::CHINESE);
-  Serial.printf("IP: %s\n", myIP.IP.c_str());
-  Serial.printf("City: %s\n", myIP.City.c_str());
+  IPAPIResponse ipAPIResponse = GetIPInfomation();
+  if(ipAPIResponse.status != "success"){
+    Serial.printf("Get ip information failed:%s\n Restarting......\n",ipAPIResponse.message);
+    esp_restart();
+  }
+  Serial.printf("IP: %s\n", ipAPIResponse.query.c_str());
+  Serial.printf("City: %s\n", ipAPIResponse.city.c_str());
 
-  gi = qwAPI.GetGeoInfo(myIP.City, myIP.Province);
+  gi = qwAPI.GetGeoInfo(ipAPIResponse.city, ipAPIResponse.regionName);
   Serial.printf("从和风天气中取到匹配城市: %s\n", gi.name.c_str());
 
   setupDateTime();
