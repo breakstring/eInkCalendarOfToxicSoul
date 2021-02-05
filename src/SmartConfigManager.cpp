@@ -79,12 +79,20 @@ void SmartConfigManager::initWiFi(WaitingFormSmartConfigHandler handler)
           Serial.printf("Connect WiFi successfully with IP: '%s'\n", WiFi.localIP().toString().c_str());
           return;
         }
+        else
+        {
+          Serial.println("Connect WiFi timeout, will restart the device to retry again.");
+          esp_restart();
+        }
+        
       }
     }
   }
   catch (const std::exception &e)
   {
     Serial.printf("Error: %s\n", e.what());
+    esp_restart();
+
   }
 
   while (!TryConnectWiFiWithSmartConfig(handler))
