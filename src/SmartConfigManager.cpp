@@ -81,8 +81,7 @@ void SmartConfigManager::initWiFi(WaitingFormSmartConfigHandler handler)
         }
         else
         {
-          Serial.println("Connect WiFi timeout, will restart the device to retry again.");
-          esp_restart();
+          Serial.println("Connect WiFi timeout, will re-connect with SmartConfig QR Code.");
         }
         
       }
